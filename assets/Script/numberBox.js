@@ -19,10 +19,6 @@ cc.Class({
 		moveMaxTime: 0.9,
 		moveMinTime: 0.2,
 		
-		number_slot_node: {
-            default: null,
-            type: cc.Node
-        },
 		number_label: {
             default: null,
             type: cc.Label
@@ -47,17 +43,40 @@ cc.Class({
     // LIFE-CYCLE CALLBACKS:
 
      onLoad () {
-		console.log('onLoad');
 		this.setInputControl();
+
+		this.number = 0;
+		this.setNumber(this.number);
+
+		this.numberSlot = null;
+		this.lastNumberSlot = null;
+
+		this.moveDirty = false;
+
+		this.validBox = true;
 	 },
 
     start () {
-		this.originPosX = this.node.x;
-		this.originPosY = this.node.y;
 		this.contentSize = this.node.getContentSize();
-		
-		this.setNumber(this.number);
-    },
+	},
+
+	setNumberSlot: function(slot)
+	{
+		if (slot != this.numberSlot)
+		{
+			this.lastNumberSlot = this.numberSlot;
+			this.numberSlot = slot;
+		}
+	},
+
+	getNumberSlot: function(){
+		return this.numberSlot;
+	},
+	
+	setLogic: function(logic)
+	{
+		this.csLogic = logic;
+	},
 	
 	setNumber: function(num)
 	{
@@ -68,68 +87,96 @@ cc.Class({
 		else
 		{
 			this.number_label.string = num.toString();
-		}	
+		}
+		
+		this.number = num;
+	},
+
+	getNumber: function()
+	{
+		return this.number;
 	},
 	
+	setColor: function(c)
+	{
+		this.color = c;
+	},
 
-    // update (dt) {},
+	getColor: function()
+	{
+		return this.color;
+	},
+
+	// update (dt) {},
 	
-	notifyMoveSlotNode: function (type, movePos) {
-		 var com_numberSlot = this.number_slot_node.getComponent("numberSlot");
-		com_numberSlot.notifyMoveSlotNode(type, movePos);
+	moveToNumberSlot: function(numberSlot)
+	{
+		var actNumberSlot = this.numberSlot;
+		this.moveDirty = (numberSlot != null);
+		if (this.moveDirty)
+		{
+			actNumberSlot = numberSlot;
+			this.setNumberSlot(numberSlot);
+		}
+		
+		var moveDis = cc.pDistance(cc.v2(actNumberSlot.node.x, actNumberSlot.node.y), cc.v2(this.node.x, this.node.y));
+		if (moveDis <= this.moveRestoreDis)
+		{
+			this.restorePosition();
+		}
+		else
+		{
+			var tan2x = Math.atan2(actNumberSlot.node.y - this.node.y, actNumberSlot.node.x - this.node.x);//得到与原点的弧度
+			var y = Math.sin(tan2x)*this.moveRestoreDis;
+			var x = Math.cos(tan2x)*this.moveRestoreDis;
+			
+			
+			var callback = cc.callFunc(this.restorePosition, this);
+			var checkNumberValidCallback = cc.callFunc(this.checkNumberValid, this);
+			var time = moveDis/this.moveSpeed;
+			if (time < this.moveMinTime) time = this.moveMinTime;
+			if (time > this.moveMaxTime) time = this.moveMaxTime;
+			
+			var action = cc.moveBy(time, cc.p(actNumberSlot.node.x - this.node.x - x, actNumberSlot.node.y - this.node.y - y)).easing(cc.easeCubicActionOut());
+			this.node.runAction(cc.sequence(action, callback, checkNumberValidCallback));
+		}
+	},
+	
+	notifyMoveToLogic: function (type, movePos) {
+		return this.csLogic.notifyNumberMove(type, this.node.convertToWorldSpaceAR(cc.p(0, 0)), this);
 	},
 	
 	setInputControl: function () {
-		console.log('setInputControl');
-        var self = this;
-		
-		
+        
 		//监听鼠标
 		this.node.on(cc.Node.EventType.TOUCH_START, function (event) {
 			let mousePoint = event.getLocation();
 			let localPoint = this.node.convertToNodeSpace(mousePoint);
 			this.node.setPosition(this.node.position.x + localPoint.x - this.contentSize.width/2,
 									this.node.position.y + localPoint.y - this.contentSize.height/2);
-			this.notifyMoveSlotNode(cc.Node.EventType.TOUCH_START, cc.v2(0, 0));
+			this.notifyMoveToLogic(cc.Node.EventType.TOUCH_START, cc.v2(0, 0));
+
+			this.lastLocalZOrder = this.node.getLocalZOrder();
+			this.node.setLocalZOrder(999);
 		}, this);
 		this.node.on(cc.Node.EventType.TOUCH_MOVE, function (event) {
-            //this.opacity = 100;
             var delta = event.touch.getDelta();
             this.node.x += delta.x;
             this.node.y += delta.y;
 			
-			this.notifyMoveSlotNode(cc.Node.EventType.TOUCH_MOVE, cc.v2(this.node.x, this.node.y));
+			this.notifyMoveToLogic(cc.Node.EventType.TOUCH_MOVE, cc.v2(this.node.x, this.node.y));
         }, this);
 		this.node.on(cc.Node.EventType.TOUCH_END, function (event) {
-			let mousePoint = event.getLocation();
-			let localPoint = this.node.convertToNodeSpace(mousePoint);
-			
-			
-			var moveDis = cc.pDistance(cc.v2(this.originPosX, this.originPosY), cc.v2(this.node.x, this.node.y));
-			console.log('moveDis:', moveDis);
-			
-			if (moveDis <= this.moveRestoreDis)
+			var numberSlot = this.notifyMoveToLogic(cc.Node.EventType.TOUCH_END, cc.v2(0, 0));
+			var oldNumberSlot = this.numberSlot;
+			this.moveToNumberSlot(numberSlot);
+			if (this.moveDirty)
 			{
-				this.restorePosition();
+				this.csLogic.moveNumberToBox(oldNumberSlot, numberSlot, this);
 			}
-			else
-			{
-				var tan2x = Math.atan2(this.originPosY - this.node.y, this.originPosX - this.node.x);//得到与原点的弧度
-				var y = Math.sin(tan2x)*this.moveRestoreDis;
-				var x = Math.cos(tan2x)*this.moveRestoreDis;
-				console.log('this.node:', x, y);
-				
-				var callback = cc.callFunc(this.restorePosition, this);
-				var time = moveDis/this.moveSpeed;
-				if (time < this.moveMinTime) time = this.moveMinTime;
-				if (time > this.moveMaxTime) time = this.moveMaxTime;
-				
-				var action = cc.moveBy(time, cc.p(this.originPosX - this.node.x - x, this.originPosY - this.node.y - y)).easing(cc.easeCubicActionOut());
-				this.node.runAction(cc.sequence(action, callback));
-			}
+
+			this.node.setLocalZOrder(this.lastLocalZOrder);	
 			
-						
-			this.notifyMoveSlotNode(cc.Node.EventType.TOUCH_END, cc.v2(0, 0));
 		}, this);
 		
 		/*
@@ -162,7 +209,33 @@ cc.Class({
 	
 	restorePosition: function()
 	{
-		this.node.x = this.originPosX;
-		this.node.y = this.originPosY;
+		this.node.x = this.numberSlot.node.x;
+		this.node.y = this.numberSlot.node.y;
+	},
+
+	setValidBox: function(success)
+	{
+		this.validBox = success;
+		if (success)
+		{
+			if(this.color == 'w')
+				this.number_label.node.setColor(new cc.Color(81, 81, 255));
+			else
+				this.number_label.node.setColor(new cc.Color(255, 255, 255));
+		}
+		else
+			this.number_label.node.setColor(new cc.Color(255, 0, 0));
+
+			
+	},
+
+	checkNumberValid: function()
+	{
+		this.csLogic.checkBoxValid(this.numberSlot);
+	},
+
+	getValidBox: function()
+	{
+		return this.validBox;
 	},
 });
