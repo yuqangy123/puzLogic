@@ -12,11 +12,96 @@ cc.Class({
 
     start () {
         this.loadHallData();
+
+        this.defLeafSal = 0.15;
+        this.leafFall();
     },
     
     // called every frame
     update: function (dt) {
 
+    },
+
+    leafMove: function(leaf)
+    {
+        var randSal = Math.random()*0.4;
+        var sal = this.defLeafSal + randSal;
+        leaf.setScale(sal);
+        
+        if (sal > 0.5)
+        {
+            this.defLeafSal = this.defLeafSal - 0.05;
+            sal = 0.5;
+        }
+        if (sal < 0.3)
+        {
+            this.defLeafSal = this.defLeafSal + 0.05;
+        }
+        
+        leaf.opacity = 60;
+
+        var screenSize = this.CanvasNode.getContentSize();
+        var turnleft = Math.random() >= 0.5;
+
+        var ranx = Math.random();
+        leaf.setPosition((turnleft ? ranx*screenSize.width : -ranx*screenSize.width), screenSize.height/2 + 50);
+        
+        ranx = Math.random();
+        var offsetx = (turnleft ? -screenSize.width/2 : screenSize.width/2) + (turnleft ? -ranx:ranx)*screenSize.width;
+        var offsety = screenSize.height + Math.random()*screenSize.height/2;
+
+        
+        var moveDis = Math.sqrt(offsetx*offsetx + offsety*offsety);
+        var action = cc.moveBy(moveDis/70, cc.p(offsetx, -offsety));
+        
+        var self = this;
+        var compileCallback = function()
+        {
+            self.leafMove(leaf);
+        };
+
+        leaf.stopAllActions();
+        var callF = cc.callFunc(function(){
+            self.leafMove(this);
+        }.bind(leaf));
+        leaf.runAction(cc.sequence(cc.delayTime(Math.random()*10), action, callF));
+        
+        //自身旋转
+        leaf.runAction(cc.repeatForever(cc.rotateBy(27 + Math.random()*27, turnleft ? 360:-360)));
+
+        //自身翻转
+        if(Math.random() < 0.2)
+        {
+            //leaf.runAction(cc.repeatForever(cc.flipX(27 + Math.random()*27, turnleft ? 360:-360)));
+        }
+    },
+
+    leafFall: function(){
+        var bgColorLayout = this.CanvasNode.getChildByName('bgColorLayout');
+        var syArray = [];
+        var self = this;
+        for (var i=1; i<=10; i++)
+        {
+            var sy = bgColorLayout.getChildByName('sy' + i);
+            var callF = cc.callFunc(function(){
+                self.leafMove(this);
+            }.bind(sy));
+            sy.runAction(cc.sequence(cc.delayTime(i+Math.random()*i*4), callF));
+        }
+    },
+
+    newSelectCustomNode: function () {
+        this.destorySelectCustomNode();
+        this.selectCustomNode = new cc.Node();
+        this.selectCustomNode.parent = this.hallNode;
+        this.selectCustomNode.setPosition(0,0);
+    },
+    destorySelectCustomNode: function(){
+        if(this.selectCustomNode)
+        {
+            this.selectCustomNode.destroy();
+            this.selectCustomNode = null;
+        }
     },
 
     loadHallData:function(){
@@ -25,6 +110,9 @@ cc.Class({
 
     resetCanvas: function(){
         this.CanvasNode = cc.find( 'Canvas' );
+        this.hallNode = cc.find('Canvas/hallNode');
+        this.dueLayout = cc.find('Canvas/dueLayout');
+        this.dueLayout.setLocalZOrder(2);
 
         this.boxCSInfo = new Array();
 
@@ -34,6 +122,8 @@ cc.Class({
 
         //通关规则
         this.passRules = [];
+
+        this.newSelectCustomNode();
     },
 
     addSlotToMoveNotifyPool: function(boxSlot, number)
@@ -79,17 +169,23 @@ cc.Class({
             var newMyPrefab = cc.instantiate( loadedResource );
             
             //我們先將這個建立出來的Prefab加入畫布裡
-            self.CanvasNode.addChild( newMyPrefab );
+            self.selectCustomNode.addChild( newMyPrefab );
             
             var numberScript = newMyPrefab.getComponent( 'numberBox' );
 
             numberScript.setColor(numberInfo.color);
             numberScript.setNumber(numberInfo.number);
             numberScript.setLogic(self);
-            numberScript.setNumberSlot(numberSlot);
             numberSlot.setNumberBox(numberScript);
             newMyPrefab.x = numberSlot.node.x;
             newMyPrefab.y = numberSlot.node.y;
+
+            var gou = newMyPrefab.getChildByName('gou');
+            if(gou)
+            {
+                
+                gou.active = true;
+            }
         };
         
         //這邊才是真的使用cc.loader進行載入，並且呼叫我們上面寫的方法
@@ -98,34 +194,6 @@ cc.Class({
 
     newNumberSlotUI:function(boxCSInfo, posx, posy, numberi, numberj, numberInfo)
     {
-        function parseRule(str, cro, por)
-        {
-            if(str == null || str.length == 0)
-                return null;
-            
-            switch(str[0])
-            {
-                case 'r':
-                case 'l':
-                {
-                    this.direct = 'cross';
-                    this.line = cro;
-                    break;
-                }
-                
-
-                case 't':
-                case 'b':
-                {
-                    this.direct = 'portait';
-                    this.line = por;
-                    break;
-                }
-            }
-            this.d = str[0];
-            this.logic = str[1];
-        }
-
         if (!boxCSInfo.valid)
             return;
 
@@ -156,15 +224,9 @@ cc.Class({
 
             //box位置
             newMyPrefab.setPosition(posx, posy);
-            var box_slot_select = newMyPrefab.getChildByName('box_slot_select');
-            var box_slot_unselect = newMyPrefab.getChildByName('box_slot_unselect');
-            /*box_slot_select.color = new cc.Color(255, 0, 0);
-            box_slot_unselect.color = new cc.Color(255, 0, 0);
-            box_slot_select.opacity = 12;
-            box_slot_unselect.opacity = 12;
-*/
+            
             //我們先將這個建立出來的Prefab加入畫布裡
-            self.CanvasNode.addChild( newMyPrefab );
+            self.selectCustomNode.addChild( newMyPrefab );
             boxCSInfo.slotUI = newMyPrefab;
 
             numberSlotScript.setSlotSite(numberi, numberj);
@@ -186,9 +248,13 @@ cc.Class({
             if(null != numberInfo)
             {
                 if(boxCSInfo.number <= 10)
+                {
                     self.newNumberUI(numberInfo, numberSlotScript);
-                self.addSlotToMoveNotifyPool(numberSlotScript, numberInfo.number);
+                    self.addSlotToMoveNotifyPool(numberSlotScript, numberInfo.number);
+                }
             }
+
+            boxCSInfo.slot = numberSlotScript;
         };
         
         //這邊才是真的使用cc.loader進行載入，並且呼叫我們上面寫的方法
@@ -209,8 +275,6 @@ cc.Class({
         //根据方块数量和屏幕尺寸布局方格
         var screenSize = this.CanvasNode.getContentSize();
 
-        console.log('hallLogic.screenSize', screenSize.width, screenSize.height);
-
         var boxSize = {width:92, height:92};
         var boxSpace = 8;//方格间距
 
@@ -220,14 +284,15 @@ cc.Class({
         
         var x = beginPosX;
         var y = -screenSize.height/2 + 200 + beginPosY;
+        
         for (var i=0; i<this.numbersInfo.length; i++)
         {
+            this.boxCSInfo[i] = new Array(this.numbersInfo.length);
             for(var j=0; j<this.numbersInfo[i].length; j++)
             {
-                var self = this;
+                this.boxCSInfo[i][j] = {valid:true, color:'s', number:this.numbersInfo[i][j].number};
                 var tmpNumberInfo = this.numbersInfo[i][j];
-                var slotData={valid:true, color:'s', number:this.numbersInfo[i][j].number};
-                this.newNumberSlotUI( slotData, x, y, i, j, tmpNumberInfo);
+                this.newNumberSlotUI( this.boxCSInfo[i][j], x, y, i, j, tmpNumberInfo );
                 
                 x = x + (boxSize.width+boxSpace);
             }
@@ -235,7 +300,8 @@ cc.Class({
             y = y - (boxSize.height+boxSpace);
         }
 
-        this.newNumberSlotUI({valid:true, color:'p', number:0}, 0, 0, 0, 0);
+        this.playerSlotData = {valid:true, color:'p', number:0}
+        this.newNumberSlotUI(this.playerSlotData, 0, 0, 0, 0);
     },
     
     //生成一个格子信息。根据字符串数据
@@ -291,18 +357,49 @@ cc.Class({
 
     //检查数字方格合法性，更新颜色，检查通关
     checkBoxValid: function(srcSlot){
+        if(srcSlot)
+        {
+            var numberBox = srcSlot.getNumberBox();
+            if('p' == srcSlot.getSlotColor() && numberBox)
+                this.playGame(numberBox.getNumber(), "due");
+        }
     },
 
     //移动数字到方格，更新boxCSInfo
     moveNumberToBox: function(srcSlot, destSlot, numberBox)
     {
-        var number = numberBox.getNumber();
-        if('p' == destSlot.getSlotColor())
-            this.playGame(numberBox.getNumber());
+        console.log('moveNumberToBox');
+        console.log('moveNumberToBox.srcSlot', srcSlot.getSlotSite().x, srcSlot.getSlotSite().y);
+        console.log('moveNumberToBox.destSlot', destSlot.getSlotSite().x, destSlot.getSlotSite().y);
+        
+        var destNumberBox = destSlot.getNumberBox();
+        destSlot.setNumberBox(numberBox);
+        srcSlot.setNumberBox(destNumberBox);
+
+        console.log('moveNumberToBox.destNumberBox', destNumberBox);
+        console.log('moveNumberToBox.numberBox', numberBox.getNumber());
+
     },
 
-    playGame: function(customID){
+    playGame: function(customID, param){
         this.playCusomtID = customID;
+        
+        //this.destorySelectCustomNode();
+        this.hallNode.active = false;
+
+        var customLogic = this.node.getComponent('customLogic');
+        customLogic.destoryCustomNode();
+        customLogic.resetCanvas();
+        customLogic.loadCustomsData(customID);
+        var customMenu = this.node.getComponent('customMenu');
+        customMenu.updateUI();
+        
+        if(param == "due")
+        {
+            this.dueLayout.active = true;
+            this.scheduleOnce(function() {this.dueLayout.active = false;}, 0.6);
+        }
+        /*
         var self = this;
         cc.director.preloadScene("customScene", function () {
             cc.director.loadScene("customScene", function(){
@@ -310,7 +407,101 @@ cc.Class({
                 customLogic.resetCanvas();
                 customLogic.loadCustomsData(customID);
             });
-        });
+        });*/
+    },
+
+    customComeBack: function()
+    {
+        var customLogic = this.node.getComponent('customLogic');
+        
+
+        this.hallNode.active = true;
+
+        customLogic.destoryCustomNode();
+        //this.resetCanvas();
+        //this.loadHallData();
+
+        this.scheduleOnce(function() {
+            //找到当前关卡的方格，放在player位置，再返回原来的位置
+            var playerNumberBox = this.playerSlotData.slot.getNumberBox();
+            var playerNumber = playerNumberBox.getNumber();
+            console.log('playerNumber != this.playCusomtID', playerNumber , this.playCusomtID);
+            if(playerNumber != this.playCusomtID)
+            {
+                var emptyslot = this.findSlotWithNumber();
+                if(emptyslot)
+                {
+                    console.log('emptyslot', emptyslot.getSlotSite().x, emptyslot.getSlotSite().y);
+                    emptyslot.setNumberBox(playerNumberBox);
+                    this.playerSlotData.slot.setNumberBox(null);
+                    playerNumberBox.node.x = emptyslot.node.x;
+                    playerNumberBox.node.y = emptyslot.node.y;
+                }
+                
+
+                var slot = this.findSlotWithNumber(this.playCusomtID);
+                if(slot)
+                {
+                    console.log('slot', slot.getSlotSite().x, slot.getSlotSite().y);
+                    var numberBox = slot.getNumberBox();
+                    slot.setNumberBox(null);
+                    this.playerSlotData.slot.setNumberBox(numberBox);
+                    numberBox.node.x = this.playerSlotData.slot.node.x;
+                    numberBox.node.y = this.playerSlotData.slot.node.y;
+                }
+            }
+            playerNumberBox = this.playerSlotData.slot.getNumberBox();
+            var emptyslot = this.findSlotWithNumber();
+            console.log('emptyslot2', emptyslot.getSlotSite().x, emptyslot.getSlotSite().y);
+            console.log('playerNumberBox', playerNumberBox.getNumber());
+            if(emptyslot)
+            {
+                var oldNumberSlot = playerNumberBox.numberSlot;
+                playerNumberBox.moveToNumberSlot(emptyslot);
+                this.moveNumberToBox(oldNumberSlot, emptyslot, playerNumberBox);
+            }
+        }, 0.02);
+        
+
+
+        var bgColorLayout = this.CanvasNode.getChildByName('bgColorLayout');
+        bgColorLayout.setColor(new cc.Color(112, 161, 130));
+
+        var tipsLabel = this.CanvasNode.getChildByName("tipsLabel")
+        var label = tipsLabel.getComponent(cc.Label)
+        label.string = "";
+    },
+
+    findSlotWithNumber: function(number)
+    {
+        if(number)
+        {
+            for(var i=0; i<this.boxCSInfo.length; i++)
+            {
+                for(var j=0; j<this.boxCSInfo[i].length; j++)
+                {
+                    var numberBox = this.boxCSInfo[i][j].slot.getNumberBox();
+                    if(numberBox && numberBox.getNumber() == number)
+                    {
+                        return this.boxCSInfo[i][j].slot;
+                    }
+                }
+            }
+        }
+        else
+        {
+            for(var i=0; i<this.boxCSInfo.length; i++)
+            {
+                for(var j=0; j<this.boxCSInfo[i].length; j++)
+                {
+                    var numberBox = this.boxCSInfo[i][j].slot.getNumberBox();
+                    if(!numberBox)
+                    {
+                        return this.boxCSInfo[i][j].slot;
+                    }
+                }
+            }
+        }
     },
 
     getPlayCustomID: function(){

@@ -209,8 +209,12 @@ cc.Class({
 	
 	restorePosition: function()
 	{
-		this.node.x = this.numberSlot.node.x;
-		this.node.y = this.numberSlot.node.y;
+		if(this.numberSlot)
+		{
+			this.node.x = this.numberSlot.node.x;
+			this.node.y = this.numberSlot.node.y;
+		}
+		
 	},
 
 	setValidBox: function(success)
@@ -231,6 +235,7 @@ cc.Class({
 
 	checkNumberValid: function()
 	{
+		this.csLogic.checkBoxValid(this.lastNumberSlot);
 		this.csLogic.checkBoxValid(this.numberSlot);
 	},
 

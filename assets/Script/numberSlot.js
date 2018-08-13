@@ -47,7 +47,7 @@ cc.Class({
 
      onLoad () {
         this.isSlotUI = true;
-        this.validNumber = true;
+        this.validNumber = false;
 	 },
 
     start () {
@@ -65,6 +65,11 @@ cc.Class({
     {
         this.isSlotUI = b;
     },
+
+    getIsSlotUI: function()
+    {
+        return this.isSlotUI;
+    },
 	
 	setSlotNumber: function(number)
 	{
@@ -79,7 +84,12 @@ cc.Class({
                 this.number_label.string = number.toString();
             }
         }
-        //self.number = number
+        this.slotNumber = number;
+    },
+
+    getSlotNumber()
+    {
+        return this.slotNumber;
     },
 
     //是否为合法数字
@@ -92,16 +102,16 @@ cc.Class({
         var numberbox = this.getNumberBox();
         if (numberbox)
             numberbox.setValidBox(valid);
+        else
+            this.validNumber = false;
 
         if(valid)
         {
-            if(this.color == 'w')
-				this.number_label.node.setColor(new cc.Color(81, 81, 255));
-			else
-				this.number_label.node.setColor(new cc.Color(255, 255, 255));
+            this.number_label.node.setColor(new cc.Color(0, 0, 0));
         }
         else
             this.number_label.node.setColor(new cc.Color(255, 0, 0));
+
     },
 
     setSlotColor: function(c)
@@ -128,6 +138,14 @@ cc.Class({
 
     setNumberBox: function(box)
     {
+        if(null == box)
+        {
+            this.validNumber = false;
+        }
+        else
+        {
+            box.setNumberSlot(this);
+        }
         this.numberBox = box;
     },
 
@@ -165,35 +183,8 @@ cc.Class({
         }
         return false;
 	},
-	
-    addRuleIcon: function(direct, color)
-    {
-        var x = 0;
-        var y = 0;
-        var rot = 0;
-        var offset = 5;
-
-        var resPath ='';
-        switch(color)
-        {
-            case 'e':resPath = 'box_black.png';break;
-            case 'w':resPath = 'box_white.png';break;
-            case 'b':resPath = 'box_blue.png';break;
-        }
-        var tri = new cc.Sprite(resPath);
-
-        switch(direct)
-        {
-            case 'b':{y=y-this.slotSize.height/2-offset;}break;
-            case 'l':{x=x-this.slotSize.width/2-offset;rot=90;}break;
-            case 't':{y=y+this.slotSize.height/2+offset;rot=180;}break;
-            case 'r':{x=x+this.slotSize.width/2+offset;rot=270;}break;
-        }
-
-        tri.node.setPosition(x,y);
-        tri.node.setRotation(rot);
-        this.node.addChild(tri);
-    }
+    
+    
     // update (dt) {},
 	
 });

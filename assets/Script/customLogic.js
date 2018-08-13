@@ -21,13 +21,15 @@ cc.Class({
     },
 
     resetCanvas: function(){
-        this.CanvasNode = cc.find( 'Canvas' );
-
         this.boxCSInfo = new Array();
 
         this.numbersInfo = new Array();
 
         this.CanvasNode = cc.find( 'Canvas' );
+
+        this.customNode = new cc.Node();
+        this.customNode.parent = this.CanvasNode;
+        this.customNode.setPosition(0,0);
 
         this.moveNotifySlotArray = [];
 
@@ -41,6 +43,16 @@ cc.Class({
     loadCustomsData (cid) {
         this.initCustomData('customsData_' + cid.toString() + '.csv');
         this.initNumbersData('numbersData_' + cid.toString() + '.csv');
+
+        var tipsLabel = this.CanvasNode.getChildByName("tipsLabel")
+        var label = tipsLabel.getComponent(cc.Label)
+        label.string = "";
+
+        if(cid == 1 || cid == 2 || cid == 3)
+        {
+            label.string = "将蓝色方块拖到上面的空闲空间。\r\n任何行或列都不应该有相同的数字两次。\r\n当出现错误时，数字会变成红色。"
+            //label.string = "一行或列的总和由一个小箭头和方块外的数字表示。";
+        }
     },
     
     addSlotToMoveNotifyPool: function(boxSlot)
@@ -81,14 +93,13 @@ cc.Class({
             var newMyPrefab = cc.instantiate( loadedResource );
             
             //我們先將這個建立出來的Prefab加入畫布裡
-            self.CanvasNode.addChild( newMyPrefab );
+            self.customNode.addChild( newMyPrefab );
             
             var numberScript = newMyPrefab.getComponent( 'numberBox' );
 
             numberScript.setColor(numberInfo.color);
             numberScript.setNumber(numberInfo.number);
             numberScript.setLogic(self);
-            numberScript.setNumberSlot(numberSlot);
             numberSlot.setNumberBox(numberScript);
             newMyPrefab.x = numberSlot.node.x;
             newMyPrefab.y = numberSlot.node.y;
@@ -98,36 +109,82 @@ cc.Class({
         cc.loader.loadRes( prefabPath, onResourceLoaded );
     },
 
+    newLogicTriangleUI:function(boxCSInfo, posx, posy, numberi, numberj)
+    {
+        var prefabPath = '';
+        //Ps. 假設你是放在在resources下的prefabs資料夾中，你就得寫 'prefabs/MyPrefab'
+        
+        var rule = [];
+        rule.color = 'e';
+        rule.direct = 'cross';
+        rule.number = boxCSInfo.number;
+        
+        if (boxCSInfo.logic == '1' || boxCSInfo.logic == '2') rule.direct = 'portait';
+
+        if(rule.direct == 'portait')
+            rule.logic = numberj;
+        else
+            rule.logic = numberi;
+
+
+        //if(boxCSInfo.color == 'lbla' || boxCSInfo.color == 'lw' || boxCSInfo.color == 'lblu')
+        if(boxCSInfo.color == 'lbla')prefabPath = 'triBlackPrefab';
+        if(boxCSInfo.color == 'lw'){prefabPath = 'triWhitePrefab'; rule.color = 'w';}
+        if(boxCSInfo.color == 'lblu'){prefabPath = 'triBluePrefab'; rule.color = 'b';}
+
+        this.passRules.push(rule);
+        
+
+        var self = this;
+        var onResourceLoaded = function( errorMessage, loadedResource )
+        {
+            if( errorMessage ) { cc.log( '載入Prefab失敗, 原因:' + errorMessage ); return; }
+            if( !( loadedResource instanceof cc.Prefab ) ) { cc.log( '你載入的不是Prefab, 你做了什麼事?' ); return; } //這個是型別的檢查
+            
+            var newMyPrefab = cc.instantiate( loadedResource );
+            
+            newMyPrefab.setPosition(posx, posy);
+            self.customNode.addChild( newMyPrefab );
+
+            var triSprite = newMyPrefab.getChildByName('triSprite');
+            var numberLabel = newMyPrefab.getChildByName('numberLabel');
+            var label = numberLabel.getComponent(cc.Label)
+            label.string = boxCSInfo.number.toString();
+
+            var offset = 40;
+            
+            switch(boxCSInfo.logic)
+            {
+                case '1':
+                {
+                    triSprite.setRotation(270);
+                    triSprite.setPosition(0, -offset+5);
+                }break;
+
+                case '2':
+                {
+                    triSprite.setRotation(90);
+                    triSprite.setPosition(0, offset-5);
+                }break;
+
+                case '3':
+                {
+                    triSprite.setRotation(180);
+                    triSprite.setPosition(offset-5, 0);
+                    numberLabel.setPosition(-5, 0);
+                }break;
+
+                case '4':
+                {
+                    triSprite.setPosition(-offset, 0);
+                }break;
+            }
+        };
+        cc.loader.loadRes( prefabPath, onResourceLoaded );
+    },
+
     newNumberSlotUI:function(boxCSInfo, posx, posy, numberi, numberj, numberInfo)
     {
-        function parseRule(str, cro, por)
-        {
-            if(str == null || str.length == 0)
-                return null;
-            
-            switch(str[0])
-            {
-                case 'r':
-                case 'l':
-                {
-                    this.direct = 'cross';
-                    this.line = cro;
-                    break;
-                }
-                
-
-                case 't':
-                case 'b':
-                {
-                    this.direct = 'portait';
-                    this.line = por;
-                    break;
-                }
-            }
-            this.d = str[0];
-            this.logic = str[1];
-        }
-
         if (!boxCSInfo.valid)
             return;
 
@@ -135,12 +192,17 @@ cc.Class({
         //不過因為我們的MyPrefab直接就放在 /assets/resources/ 下，就直接寫
         var prefabPath = '';
         //Ps. 假設你是放在在resources下的prefabs資料夾中，你就得寫 'prefabs/MyPrefab'
-        
+
         if(boxCSInfo.color == 'e')prefabPath = 'boxPrefab';
         if(boxCSInfo.color == 'w')prefabPath = 'boxWhitePrefab';
         if(boxCSInfo.color == 'b')prefabPath = 'boxBluePrefab';
         if(boxCSInfo.color == 's')prefabPath = 'boxSlotPrefab';
-        
+        if(boxCSInfo.color == 'lbla' || boxCSInfo.color == 'lw' || boxCSInfo.color == 'lblu')
+        {
+            this.newLogicTriangleUI(boxCSInfo, posx, posy, numberi, numberj);
+            return;
+        }
+
         var self = this;
         //這邊我們新增一個私有方法，來做為載入Prefab時的方法
         //(當然你也可以直接寫在loadRes參數上，我只是覺得這樣比較容易看清楚)
@@ -161,7 +223,7 @@ cc.Class({
             newMyPrefab.setPosition(posx, posy);
 
             //我們先將這個建立出來的Prefab加入畫布裡
-            self.CanvasNode.addChild( newMyPrefab );
+            self.customNode.addChild( newMyPrefab );
             boxCSInfo.slotUI = newMyPrefab;
 
             numberSlotScript.setSlotSite(numberi, numberj);
@@ -178,26 +240,11 @@ cc.Class({
 
             //设置颜色
             numberSlotScript.setSlotColor(boxCSInfo.color);
-
-           //分析游戏规则
-           if (boxCSInfo.logic)
-           {
-               for(var i in boxCSInfo.logic)
-                {
-                    var rule = parseRule(boxCSInfo.logic[i], x, y);
-                    if(rule != null)
-                    {
-                        self.passRule[self.passRule.length] = rule;
-                        newMyPrefab.addRuleIcon(boxCSInfo.color, rule.logic);
-                    }
-                }
-           }
            
-
            if(null != numberInfo) 
                 self.newNumberUI(numberInfo, numberSlotScript);
             else
-                self.boxCSInfo[numberi][numberj].slot = numberSlotScript;
+                boxCSInfo.slot = numberSlotScript;
            
             //然後，我新增了一個CallBack事件，使用計時器機制，讓它在1秒之後再執行
             //var startRun = function(){ newMyPrefabScript.Run(); };
@@ -225,7 +272,6 @@ cc.Class({
         //根据方块数量和屏幕尺寸，计算方格位置
         var screenSize = this.CanvasNode.getContentSize();
 
-        console.log('screenSize', screenSize.width, screenSize.height);
         //let windowSize=cc.view.getVisibleSize();
 
         //var box = new cc.Sprite('number_slot_select.png');
@@ -279,7 +325,7 @@ cc.Class({
             {
                 var self = this;
                 var tmpNumberInfo = this.numbersInfo[i][j];
-                var slotData={valid:true, color:'s', number:this.numbersInfo[i][j].number};
+                var slotData={valid:true, color:'s', number:-1};
                 this.newNumberSlotUI( slotData, x, y, i, j, tmpNumberInfo);
                 
                 x = x + (boxSize.width+boxSpace);
@@ -294,8 +340,15 @@ cc.Class({
         var info = new Array();
         info.valid = false;
 
-        if(strData.length == 0)
+        if(!strData || strData.length == 0)
             return info;
+
+        if(strData[strData.length-1].charCodeAt() == 13)
+        {
+            strData = strData.substring(0, strData.length-1);
+            if (strData.length == 0)
+                return info;
+        }
 
         info.valid = true;
 
@@ -306,13 +359,12 @@ cc.Class({
         if (gameData[0].length > 0)
             info.number = parseInt(gameData[0]);
 
-        //为何颜色，e为无色，w为白色，b为蓝色，s为数字槽
+        //为何颜色:e为无色，w为白色，b为蓝色，s为数字槽，l开头为逻辑(lbla黑色,lw白色,lblu蓝色)(数字1234对应上下左右)
         if (gameData[1] && gameData[1].length > 0)
             info.color = gameData[1];
 
-        //算法，rtlb+color+number
         if (gameData[2] && gameData[2].length > 0)
-            info.logic = strData.split(gameData[2]);
+            info.logic = gameData[2];
 
         return info;
     },
@@ -322,24 +374,44 @@ cc.Class({
     {
         var self = this;
         cc.loader.loadRes(dataFile, function(err,data){
-            if(err){
+            if(err)
+            {
                 //cc.log(err);          //加载失败
                 console.log('initCustomData file ', dataFile, err);
                 return
-            }else {
+            }else 
+            {
                 var gameData = data.split("\n");
-                for(var i = 0;i<gameData.length;i++){
+                for(var i = 0;i<gameData.length;i++)
+                {
                     var itemData = gameData[i].split(",");
                     self.boxCSInfo[i] = new Array(itemData.length);
-                    for(var j = 0;j<itemData.length;j++){
+
+                    var p = (itemData.length > 0);
+                     
+                    for(var j = 0;j<itemData.length;j++)
+                    {
                         self.boxCSInfo[i][j] = self.newBoxSlotInfo(itemData[j]);
-                        if (self.boxCSInfo[i][j].valid && self.boxCSInfo[i][j].number == -1)
-                            self.problems = self.problems + 1;
+                        /*
+                        if (self.boxCSInfo[i][j].valid)
+                        {
+                            if(p)
+                            {
+                                p = false;
+                                self.passRules.portaits.push([i,j]);//收集规则信息
+                            }
+                            if(crosses[j]>i)crosses[j]=[i,j];
+                        }*/
                     }
+
+                    /*
+                    for(var i=0; i<crosses.length; i++)
+                    {
+                        if(crosses[i] != 999)self.passRules.crosses.push(crosses[i]);
+                    }*/
                 }
             }
 
-            console.log('self.problems:', self.problems);
             self.parseBoxCSInfoUI();
         });
     },
@@ -406,10 +478,100 @@ cc.Class({
 
     //检查数字方格合法性，更新颜色，检查通关
     checkBoxValid: function(srcSlot){
+
+        /*
+        var validList = new Array(this.csBoxCount.x);
+        for (var i=0; i<this.csBoxCount.x; ++i)
+        {
+            for (var j=0; j<this.csBoxCount.y; ++j)
+                validList[i][j] = 0;
+        }
+        
+        for(var i=0; i<this.passRules.crosses.length; i++)
+        {
+            var repeatNumber = [0,0,0,0,0,0,0,0,0,0];
+            for (var j=0; j<this.csBoxCount.x; j++)
+            {
+                var number = this.boxCSInfo[j][this.passRules.crosses[i]].number;
+                if(null != number && -1 < number)
+                    repeatNumber[number] = repeatNumber[number] + 1;
+            }
+            for (var j=0; j<this.csBoxCount.x; j++)
+            {
+                var number = this.boxCSInfo[j][this.passRules.crosses[i]].number;
+                if(null != number && -1 < number && 1 < repeatNumber[number])
+                    validList[this.passRules.crosses[i]][j] = 1;
+            }
+        }
+
+        for(var i=0; i<this.passRules.portaits.length; i++)
+        {
+            var repeatNumber = [0,0,0,0,0,0,0,0,0,0];
+            for (var j=0; j<this.csBoxCount.y; j++)
+            {
+                var number = this.boxCSInfo[j][this.passRules.crosses[i]].number;
+                if(null != number && -1 < number)
+                    repeatNumber[number] = repeatNumber[number] + 1;
+            }
+            for (var j=0; j<this.csBoxCount.y; j++)
+            {
+                var number = this.boxCSInfo[this.passRules.crosses[i]][j].number;
+                if(null != number && -1 < number && 1 < repeatNumber[number])
+                    validList[this.passRules.crosses[i]][j] = 1;
+            }
+        }
+
+
+        var crossList = [];
+        self.boxCSInfo.length
+        for (var i=0; i<this.csBoxCount.y; i++)
+        {
+            for (var j=0; j<this.csBoxCount.x; j++)
+            {
+                if(null != this.boxCSInfo[j][i].number)
+                {
+                    crossList[crossList.length+1] = j;
+                    break;
+                }
+            }
+            
+        }
+
+        var portaitList = [];
+        for (var i=0; i<this.csBoxCount.x; i++)
+        {
+            for (var j=0; j<this.csBoxCount.y; j++)
+            {
+                if(null != this.boxCSInfo[i][j].number)
+                {
+                    portaitList[portaitList.length+1] = j;
+                    break;
+                }
+            }
+            
+        }
+    
+        var retList = new Array(20);
+        for (var i=0; i<20; i++)
+        {
+            retList[i] = new Array(20);
+            for (var j=0; j<20; j++)
+                retList[i][j] = true;
+        }
+
+        for (var i=0; i<crossList; i++)
+        {
+            for(var j=0; j<this.csBoxCount.y; j++)
+            {
+                
+            }
+        }
+
+        */
+        ////////////
         
         var tt = [0,0,0,0,0,0,0,0,0,0];
-        var valids = [0,0,0,0,0,0,0,0,0,0];
-
+        
         var beok = true;
         var restoreColor = false;
 
@@ -428,34 +590,36 @@ cc.Class({
         
         
         var slotSite = srcSlot.getSlotSite();
+        srcSlot.setValidNumber(true);
+
+        //console.log('slotSite:', slotSite.x, slotSite.y);
 
         //遍历横向
         for (var i=0; i<this.csBoxCount.y; i++)
         {
-            if(null != this.boxCSInfo[slotSite.x][i].number && -1 != this.boxCSInfo[slotSite.x][i].number)
+            if(null != this.boxCSInfo[slotSite.x][i].number && 
+                -1 != this.boxCSInfo[slotSite.x][i].number && !this.boxCSInfo[slotSite.x][i].logic)
             {
+                
                 tt[this.boxCSInfo[slotSite.x][i].number] = tt[this.boxCSInfo[slotSite.x][i].number] + 1;
             }
         }
         for (var i=0; i<this.csBoxCount.y; i++)
         {
-            if(null != this.boxCSInfo[slotSite.x][i].number && -1 != this.boxCSInfo[slotSite.x][i].number)
+            if(null != this.boxCSInfo[slotSite.x][i].number && 
+                -1 != this.boxCSInfo[slotSite.x][i].number && !this.boxCSInfo[slotSite.x][i].logic)
             {
-                var numberbox = this.boxCSInfo[slotSite.x][i].slot.getNumberBox();
-                if (!numberbox)continue;
-
                 if(1 < tt[this.boxCSInfo[slotSite.x][i].number])
                 {
-                    
-                    numberbox.setValidBox(false);
+                    this.boxCSInfo[slotSite.x][i].slot.setValidNumber(false);
                     beok = false;
                 }
                 else
                 {
-                    if(!numberbox.getValidBox())
+                    if(!this.boxCSInfo[slotSite.x][i].slot.isValidNumber())
                     {
                         var ret = this.checkBoxValidByPortait(slotSite.x, i);
-                        numberbox.setValidBox(ret);
+                        this.boxCSInfo[slotSite.x][i].slot.setValidNumber(ret);
                         if(!ret)beok = false;
                     }
                 }
@@ -466,29 +630,28 @@ cc.Class({
         for (var i=0; i<tt.length; i++)tt[i]=0;
         for (var i=0; i<this.csBoxCount.x; i++)
         {
-            if(null != this.boxCSInfo[i][slotSite.y].number && -1 != this.boxCSInfo[i][slotSite.y].number)
+            if(null != this.boxCSInfo[i][slotSite.y].number && 
+                -1 != this.boxCSInfo[i][slotSite.y].number && !this.boxCSInfo[i][slotSite.y].logic)
             {
                 tt[this.boxCSInfo[i][slotSite.y].number] = tt[this.boxCSInfo[i][slotSite.y].number] + 1;
             }
         }
         for (var i=0; i<this.csBoxCount.x; i++)
         {
-            if(null != this.boxCSInfo[i][slotSite.y].number && -1 != this.boxCSInfo[i][slotSite.y].number)
+            if(null != this.boxCSInfo[i][slotSite.y].number && -1 != 
+                this.boxCSInfo[i][slotSite.y].number && !this.boxCSInfo[i][slotSite.y].logic)
             {
-                var numberbox = this.boxCSInfo[i][slotSite.y].slot.getNumberBox();
-                if (!numberbox)continue;
-
                 if(1 < tt[this.boxCSInfo[i][slotSite.y].number])
                 {
-                    numberbox.setValidBox(false);
+                    this.boxCSInfo[i][slotSite.y].slot.setValidNumber(false);
                     beok = false;
                 }
                 else
                 {
-                    if(!numberbox.getValidBox())
+                    if(!this.boxCSInfo[i][slotSite.y].slot.isValidNumber())
                     {
                         var ret = this.checkBoxValidByCross(i, slotSite.y);
-                        numberbox.setValidBox(ret);
+                        this.boxCSInfo[i][slotSite.y].slot.setValidNumber(ret);
                         if(!ret)beok = false;
                     }
                 }
@@ -499,7 +662,90 @@ cc.Class({
         if(false == beok)
             return;
 
+        
+        for(var i=0; i<this.boxCSInfo.length; i++)
+        {
+            for (var j=0; j<this.boxCSInfo[i].length; j++)
+            {
+                if(this.boxCSInfo[i][j].valid && !this.boxCSInfo[i][j].logic)
+                {
+                    if(!this.boxCSInfo[i][j].slot.getIsSlotUI())
+                        continue;
 
+                    if(!this.boxCSInfo[i][j].slot.isValidNumber())
+                        return;
+                }
+            }
+        }
+        
+        for(var i=0; i<this.passRules.length; i++)
+        {
+            var ruleColor = this.passRules[i].color;
+            var logic = this.passRules[i].logic;
+            var ruleNumber = 0;
+            
+            
+            if(this.passRules[i].direct == 'cross')
+            {
+                for(var j=0; j<this.boxCSInfo[logic].length; j++)
+                {
+                    if (this.boxCSInfo[logic][j].logic)continue;
+
+                    var color = this.boxCSInfo[logic][j].slot.getSlotColor();
+                    if (color == ruleColor || color == 'e' || ruleColor == 'e')
+                    {
+                        var number = this.boxCSInfo[logic][j].slot.getSlotNumber();
+                        if(!number)
+                        {
+                            var numberBox = this.boxCSInfo[logic][j].slot.getNumberBox();
+                            if(numberBox)
+                            {
+                                ruleNumber = ruleNumber + numberBox.getNumber();
+                            }
+                        }
+                        else
+                        {
+                            ruleNumber = ruleNumber + number;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for(var j=0; j<30; j++)
+                {
+                    if (!this.boxCSInfo[j]) break;
+                    if(this.boxCSInfo[j][logic].valid && !this.boxCSInfo[j][logic].logic)
+                    {
+                        var color = this.boxCSInfo[j][logic].slot.getSlotColor();
+                        if (color == ruleColor || color == 'e' || ruleColor == 'e')
+                        {
+                            var number = this.boxCSInfo[j][logic].slot.getSlotNumber();
+                            if(!number)
+                            {
+                                var numberBox = this.boxCSInfo[j][logic].slot.getNumberBox();
+                                if(numberBox)
+                                {
+                                    ruleNumber = ruleNumber + numberBox.getNumber();
+                                }
+                            }
+                            else
+                            {
+                                ruleNumber = ruleNumber + number;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if(ruleNumber != this.passRules[i].number)
+                return;
+        }
+        
+        console.log("win!!!");
+        this.node.dispatchEvent( new cc.Event.EventCustom('winEvent', true) );
+
+/*
         //遍历全局
         for(var i=0; i<this.csBoxCount.x; i++)
         {
@@ -538,7 +784,7 @@ cc.Class({
         }
 
         console.log('win!!!');
-        
+  */      
     },
 
     //移动数字到方格，更新boxCSInfo
@@ -562,14 +808,12 @@ cc.Class({
             }
 
             var destSlotSite = destSlot.getSlotSite();
-            console.log('destSlot.setNumberBox2', destSlotSite.x, destSlotSite.y);
             if(this.boxCSInfo[destSlotSite.x][destSlotSite.y].number == -1)
             {
                 this.boxCSInfo[destSlotSite.x][destSlotSite.y].number = numberBox.getNumber();
                 this.boxCSInfo[destSlotSite.x][destSlotSite.y].color = numberBox.getColor();
                 this.problems = this.problems - 1;
                 srcSlot.setNumberBox(null);
-                console.log('destSlot.setNumberBox', destSlotSite.x, destSlotSite.y);
                 destSlot.setNumberBox(numberBox);
                 return;
             }
@@ -638,4 +882,11 @@ cc.Class({
         }
     },
     
+    destoryCustomNode: function(){
+        if(this.customNode)
+        {
+            this.customNode.destroy();
+            this.customNode = null;
+        }
+    },
 });
