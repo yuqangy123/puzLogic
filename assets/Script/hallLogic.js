@@ -2,12 +2,59 @@ cc.Class({
     extends: cc.Component,
 
     properties: {
+        sfx1: {
+            type: cc.AudioSource,
+            default: null
+        },
+        sfx2: {
+            type: cc.AudioSource,
+            default: null
+        },
+        sfx3: {
+            type: cc.AudioSource,
+            default: null
+        },
+        sfx4: {
+            type: cc.AudioSource,
+            default: null
+        },
+        sfx5: {
+            type: cc.AudioSource,
+            default: null
+        },
+        sfx6: {
+            type: cc.AudioSource,
+            default: null
+        },
+        BGMusic1: {
+            type: cc.AudioSource,
+            default: null
+        },
+        BGMusic2: {
+            default: null,
+            type: cc.AudioSource
+        },
+        bird1: {
+            default: null,
+            type: cc.AudioSource
+        },
+        bird2: {
+            default: null,
+            type: cc.AudioSource    
+        },
+    },
+
+
+    random: function(lower, upper) {
+        return Math.floor(Math.random() * (upper - lower)) + lower;
     },
 
     // use this for initialization
     onLoad: function () {
         
         this.resetCanvas();
+        
+        //let winSize = wx.getSystemInfoSync();
     },
 
     start () {
@@ -15,11 +62,13 @@ cc.Class({
 
         this.defLeafSal = 0.15;
         this.leafFall();
+
+        this.musicSystem();
     },
     
     // called every frame
     update: function (dt) {
-
+        
     },
 
     leafMove: function(leaf)
@@ -67,7 +116,7 @@ cc.Class({
         leaf.runAction(cc.sequence(cc.delayTime(Math.random()*10), action, callF));
         
         //自身旋转
-        leaf.runAction(cc.repeatForever(cc.rotateBy(27 + Math.random()*27, turnleft ? 360:-360)));
+        leaf.runAction(cc.repeatForever(cc.rotateBy(27 + Math.random()*27, turnleft ? -360:360)));
 
         //自身翻转
         if(Math.random() < 0.2)
@@ -202,12 +251,14 @@ cc.Class({
         var prefabPath = '';
         //Ps. 假設你是放在在resources下的prefabs資料夾中，你就得寫 'prefabs/MyPrefab'
         
+        //test code
+        var maxCus = 20;
         if(boxCSInfo.color == 'e')prefabPath = 'boxPrefab';
         if(boxCSInfo.color == 'w')prefabPath = 'boxWhitePrefab';
         if(boxCSInfo.color == 'b')prefabPath = 'boxBluePrefab';
         if(boxCSInfo.color == 's')prefabPath = 'boxSlotPrefab';
         if(boxCSInfo.color == 'p')prefabPath = 'boxSlotPlayPrefab';
-        if(boxCSInfo.number > 10)prefabPath = 'boxSlotGrayPrefab';//test code
+        if(boxCSInfo.number > maxCus)prefabPath = 'boxSlotGrayPrefab';
         
         var self = this;
         //這邊我們新增一個私有方法，來做為載入Prefab時的方法
@@ -247,7 +298,7 @@ cc.Class({
 
             if(null != numberInfo)
             {
-                if(boxCSInfo.number <= 10)
+                if(boxCSInfo.number <= maxCus)
                 {
                     self.newNumberUI(numberInfo, numberSlotScript);
                     self.addSlotToMoveNotifyPool(numberSlotScript, numberInfo.number);
@@ -276,14 +327,14 @@ cc.Class({
         var screenSize = this.CanvasNode.getContentSize();
 
         var boxSize = {width:92, height:92};
-        var boxSpace = 8;//方格间距
+        var boxSpace = 20;//方格间距
 
         var beginPosX = (-(portait-1)*(boxSize.width+boxSpace)/2);
         var beginPosY = ((cross-1)*(boxSize.height+boxSpace)/2);
         
         
         var x = beginPosX;
-        var y = -screenSize.height/2 + 200 + beginPosY;
+        var y = -screenSize.height/2 + 400 + beginPosY;
         
         for (var i=0; i<this.numbersInfo.length; i++)
         {
@@ -301,7 +352,7 @@ cc.Class({
         }
 
         this.playerSlotData = {valid:true, color:'p', number:0}
-        this.newNumberSlotUI(this.playerSlotData, 0, 0, 0, 0);
+        this.newNumberSlotUI(this.playerSlotData, 0, 100, 0, 0);
     },
     
     //生成一个格子信息。根据字符串数据
@@ -312,6 +363,13 @@ cc.Class({
         if(strData.length == 0)
             return info;
 
+        if(strData[strData.length-1].charCodeAt() == 13)
+        {
+            strData = strData.substring(0, strData.length-1);
+            if (strData.length == 0)
+                return info;
+        }
+        
         info.valid = true;
 
         var gameData = strData.split("_");
@@ -355,6 +413,10 @@ cc.Class({
         });
     },
 
+    checkBoxValidCallback: function(){
+        this.playSfxSound();
+    },
+
     //检查数字方格合法性，更新颜色，检查通关
     checkBoxValid: function(srcSlot){
         if(srcSlot)
@@ -368,23 +430,17 @@ cc.Class({
     //移动数字到方格，更新boxCSInfo
     moveNumberToBox: function(srcSlot, destSlot, numberBox)
     {
-        console.log('moveNumberToBox');
-        console.log('moveNumberToBox.srcSlot', srcSlot.getSlotSite().x, srcSlot.getSlotSite().y);
-        console.log('moveNumberToBox.destSlot', destSlot.getSlotSite().x, destSlot.getSlotSite().y);
-        
+        if(srcSlot == destSlot || null == destSlot)
+            return;
+
         var destNumberBox = destSlot.getNumberBox();
         destSlot.setNumberBox(numberBox);
         srcSlot.setNumberBox(destNumberBox);
-
-        console.log('moveNumberToBox.destNumberBox', destNumberBox);
-        console.log('moveNumberToBox.numberBox', numberBox.getNumber());
-
     },
 
     playGame: function(customID, param){
         this.playCusomtID = customID;
         
-        //this.destorySelectCustomNode();
         this.hallNode.active = false;
 
         var customLogic = this.node.getComponent('customLogic');
@@ -506,5 +562,45 @@ cc.Class({
 
     getPlayCustomID: function(){
         return this.playCusomtID;
+    },
+
+    playSfxSound: function(){
+        var sfx = this['sfx' + this.sfx_index];
+        sfx.play();
+        console.log('playSfxSound', this.sfx_index);
+
+        var rand = Math.random();
+        if(rand <= 0.1)
+            this.sfx_index = Math.max(1, this.sfx_index-2);
+        else if(rand > 0.1 && rand <= 0.3)
+            this.sfx_index = Math.max(1, this.sfx_index-1);
+        else if(rand > 0.7 && rand <= 0.9)
+            this.sfx_index = Math.min(6, this.sfx_index+1);
+        else if(rand > 0.9)
+            this.sfx_index = Math.min(6, this.sfx_index+2);
+    },
+
+    musicSystem: function(){
+        this.sfx_index = this.random(1, 3);
+        this.playBGMusic1();
+        this.playBird1();
+    },
+    playBGMusic1:function(){
+        this.BGMusic1.play();
+        this.scheduleOnce(function() {this.playBGMusic2();}, 52);
+    },
+    playBGMusic2:function(){
+        this.BGMusic2.play();
+        this.scheduleOnce(function() {this.playBGMusic1();}, 51);
+    },
+    playBird1:function(){
+        this.scheduleOnce(function() {
+            this.bird1.play();
+            this.scheduleOnce(function() {this.playBird2();}, 197);
+        }, Math.random()*180);
+    },
+    playBird2:function(){
+        this.bird2.play();
+        this.scheduleOnce(function() {this.playBird1();}, 304);
     },
 });

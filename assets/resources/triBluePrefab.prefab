@@ -189,8 +189,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 60,
-      "height": 40
+      "width": 53,
+      "height": 48
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -217,9 +217,9 @@
     },
     "_enabled": true,
     "_useOriginalSize": false,
-    "_actualFontSize": 54,
-    "_fontSize": 54,
-    "_lineHeight": 40,
+    "_actualFontSize": 48,
+    "_fontSize": 48,
+    "_lineHeight": 48,
     "_enableWrapText": true,
     "_N$file": null,
     "_isSystemFontUsed": true,

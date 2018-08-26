@@ -77,7 +77,7 @@ cc.Class({
         {
             if (number < 10)
             {
-                this.number_label.string = "0" + number.toString();
+                this.number_label.string = number.toString();
             }
             else
             {
@@ -107,7 +107,7 @@ cc.Class({
 
         if(valid)
         {
-            this.number_label.node.setColor(new cc.Color(0, 0, 0));
+            this.number_label.node.setColor(new cc.Color(64, 64, 64));
         }
         else
             this.number_label.node.setColor(new cc.Color(255, 0, 0));

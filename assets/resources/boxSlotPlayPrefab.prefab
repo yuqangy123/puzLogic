@@ -470,7 +470,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 0,
-      "height": 40
+      "height": 44
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -499,7 +499,7 @@
     "_useOriginalSize": false,
     "_actualFontSize": 44,
     "_fontSize": 44,
-    "_lineHeight": 40,
+    "_lineHeight": 44,
     "_enableWrapText": true,
     "_N$file": null,
     "_isSystemFontUsed": true,

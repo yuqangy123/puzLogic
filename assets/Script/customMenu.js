@@ -23,6 +23,18 @@ cc.Class({
         winDescLabel : cc.Label,
         winToNextBtn : cc.Button, 
         winToBackBtn : cc.Button,
+        Sfx_menu01: {
+            type: cc.AudioSource,
+            default: null
+        },
+        Sfx_menu02: {
+            type: cc.AudioSource,
+            default: null
+        },
+        Sfx_menu03: {
+            type: cc.AudioSource,
+            default: null
+        },
         // foo: {
         //     // ATTRIBUTES:
         //     default: null,        // The default value will be used only when the component attaching
@@ -53,11 +65,7 @@ cc.Class({
 
         this.setMenuVisible(false);
 
-        this.menuLayout.node.setLocalZOrder(2);
-        this.exitTips.node.setLocalZOrder(3);
-        this.winDescLabel.node.setLocalZOrder(4);
-        this.winToNextBtn.node.setLocalZOrder(4);
-        this.winToBackBtn.node.setLocalZOrder(4);
+        this.showWinLayOut(false);
 
         //屏蔽点击事件
         this.menuLayout.node.on(cc.Node.EventType.TOUCH_START, function (event) {
@@ -66,14 +74,30 @@ cc.Class({
         
         //监听win事件
         this.node.on('winEvent', function (event) {
-            this.winNotify();
-          }, this);
+            if(!this.winIndex)
+            {
+                this.winIndex = true;
+                this.scheduleOnce(function() {this.winNotify();}, 0.3);
+            }
+        }, this);
+        this.node.on('winEndEvent', function (event) {
+            if(!this.winIndex)
+            {
+                this.winIndex = true;
+                this.scheduleOnce(function() {this.winEndEvent();}, 4);
+            }
+        }, this);
+
+
+
+        this.adaptMenu();
     },
 
     updateUI () {
         var hallLogic = this.node.getComponent('hallLogic');
         var id = hallLogic.getPlayCustomID();
         this.setLevel(id);
+        this.winIndex = false;
 
         var rand = Math.floor(Math.random()*10);
         switch(rand)
@@ -107,6 +131,9 @@ cc.Class({
         this.clickType = 1;
 
         this.exitTips.string = '确定重新开始吗？\r\n当前关卡将会重置。';
+
+        this.Sfx_menu02.play();
+        console.log('restartClick');
     },
 
     exitYesClick: function(){
@@ -124,11 +151,17 @@ cc.Class({
             var hallLogic = this.node.getComponent('hallLogic');
             hallLogic.customComeBack();
         }
+
+        this.Sfx_menu01.play();
+        console.log('exitYesClick');
     },
 
     exitNoClick: function(){
         this.menuLayout.node.active = false;
         this.exitTips.node.active = false;
+
+        this.Sfx_menu03.play();
+        console.log('exitNoClick');
     },
     
 
@@ -144,6 +177,9 @@ cc.Class({
         this.clickType = 2;
 
         this.exitTips.string = '确定返回吗？\r\n当前关卡将会重置。';
+
+        this.Sfx_menu02.play();
+        console.log('quitClick');
     },
 
     showWinLayOut:function(b){
@@ -151,6 +187,12 @@ cc.Class({
         this.winDescLabel.node.active = b;
         this.winToNextBtn.node.active = b;
         this.winToBackBtn.node.active = b;
+
+        this.menuLayout.node.setLocalZOrder(2);
+        this.exitTips.node.setLocalZOrder(3);
+        this.winDescLabel.node.setLocalZOrder(4);
+        this.winToNextBtn.node.setLocalZOrder(4);
+        this.winToBackBtn.node.setLocalZOrder(4);
     },
 
     winToNextClick: function(){
@@ -159,6 +201,9 @@ cc.Class({
         hallLogic.playGame(hallLogic.getPlayCustomID()+1, "due" );
         
         this.showWinLayOut(false);
+
+        this.Sfx_menu01.play();
+        console.log('winToNextClick');
     },
 
     winToBackClick: function(){
@@ -167,6 +212,9 @@ cc.Class({
         hallLogic.customComeBack();
         
         this.showWinLayOut(false);
+
+        this.Sfx_menu02.play();
+        console.log('winToBackClick');
     },
 
     setLevel: function(lv){
@@ -183,17 +231,49 @@ cc.Class({
     },
 
     winNotify: function(){
+        
         this.showWinLayOut(true);
 
         var t = 1.23;
         this.winDescLabel.node.opacity = 0;
         this.winDescLabel.node.runAction(cc.fadeIn(t).easing(cc.easeCubicActionOut()));
+        this.winDescLabel.string = "恭喜通关！"
 
         this.winToNextBtn.node.opacity = 0;
         this.winToNextBtn.node.runAction(cc.fadeIn(t).easing(cc.easeCubicActionOut()));
 
         this.winToBackBtn.node.opacity = 0;
         this.winToBackBtn.node.runAction(cc.fadeIn(t).easing(cc.easeCubicActionOut()));
+    },
+
+    winEndEvent: function(){
+        this.showWinLayOut(true);
+        this.winToNextBtn.node.active = false;
+
+        var t = 1.23;
+        this.winDescLabel.node.opacity = 0;
+        this.winDescLabel.node.runAction(cc.fadeIn(t).easing(cc.easeCubicActionOut()));
+        this.winDescLabel.string = "您已全部通关！\n后续作品敬请期待。"
+
+        this.winToBackBtn.node.opacity = 0;
+        this.winToBackBtn.node.runAction(cc.fadeIn(t).easing(cc.easeCubicActionOut()));
+    },
+
+    adaptMenu: function (){
+        var CanvasNode = cc.find( 'Canvas' );
+        var screen = CanvasNode.getContentSize();
+        
+        var leftx = -screen.width/2 + 20;
+        var rightx = screen.width/2 - 20;
+        var topy = screen.height/2 - 20;
+
+        this.restartButton.node.x = leftx;
+        this.restartButton.node.y = topy;
+        this.quitButton.node.x = leftx;
+        this.quitButton.node.y = topy - 50;
+        this.level.node.x = rightx;
+        this.level.node.y = topy;
+
     },
 
     // update (dt) {},

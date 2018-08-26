@@ -51,8 +51,6 @@ cc.Class({
 		this.numberSlot = null;
 		this.lastNumberSlot = null;
 
-		this.moveDirty = false;
-
 		this.validBox = true;
 	 },
 
@@ -82,7 +80,7 @@ cc.Class({
 	{
 		if (num < 10)
 		{
-			this.number_label.string = "0" + num.toString();
+			this.number_label.string = num.toString();
 		}
 		else
 		{
@@ -112,8 +110,7 @@ cc.Class({
 	moveToNumberSlot: function(numberSlot)
 	{
 		var actNumberSlot = this.numberSlot;
-		this.moveDirty = (numberSlot != null);
-		if (this.moveDirty)
+		if (numberSlot != null)
 		{
 			actNumberSlot = numberSlot;
 			this.setNumberSlot(numberSlot);
@@ -170,10 +167,8 @@ cc.Class({
 			var numberSlot = this.notifyMoveToLogic(cc.Node.EventType.TOUCH_END, cc.v2(0, 0));
 			var oldNumberSlot = this.numberSlot;
 			this.moveToNumberSlot(numberSlot);
-			if (this.moveDirty)
-			{
-				this.csLogic.moveNumberToBox(oldNumberSlot, numberSlot, this);
-			}
+			this.csLogic.moveNumberToBox(oldNumberSlot, numberSlot, this);
+			
 
 			this.node.setLocalZOrder(this.lastLocalZOrder);	
 			
@@ -237,6 +232,7 @@ cc.Class({
 	{
 		this.csLogic.checkBoxValid(this.lastNumberSlot);
 		this.csLogic.checkBoxValid(this.numberSlot);
+		this.csLogic.checkBoxValidCallback();
 	},
 
 	getValidBox: function()

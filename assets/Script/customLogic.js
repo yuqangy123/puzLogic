@@ -9,7 +9,7 @@ cc.Class({
 
     // use this for initialization
     onLoad: function () {
-        this.maxCustomID = 1;
+        this.endCustomID = 20;
     },
 
     start () {
@@ -30,6 +30,7 @@ cc.Class({
         this.customNode = new cc.Node();
         this.customNode.parent = this.CanvasNode;
         this.customNode.setPosition(0,0);
+        this.customNode.scale = 1;
 
         this.moveNotifySlotArray = [];
 
@@ -48,7 +49,7 @@ cc.Class({
         var label = tipsLabel.getComponent(cc.Label)
         label.string = "";
 
-        if(cid == 1 || cid == 2 || cid == 3)
+        if(cid == 1)
         {
             label.string = "将蓝色方块拖到上面的空闲空间。\r\n任何行或列都不应该有相同的数字两次。\r\n当出现错误时，数字会变成红色。"
             //label.string = "一行或列的总和由一个小箭头和方块外的数字表示。";
@@ -149,7 +150,10 @@ cc.Class({
             var triSprite = newMyPrefab.getChildByName('triSprite');
             var numberLabel = newMyPrefab.getChildByName('numberLabel');
             var label = numberLabel.getComponent(cc.Label)
-            label.string = boxCSInfo.number.toString();
+            if(boxCSInfo.number > 9)
+                label.string = boxCSInfo.number.toString();
+            else
+                label.string = "0" + boxCSInfo.number.toString();
 
             var offset = 40;
             
@@ -176,7 +180,7 @@ cc.Class({
 
                 case '4':
                 {
-                    triSprite.setPosition(-offset, 0);
+                    triSprite.setPosition(-offset+5, 0);
                 }break;
             }
         };
@@ -271,20 +275,32 @@ cc.Class({
 
         //根据方块数量和屏幕尺寸，计算方格位置
         var screenSize = this.CanvasNode.getContentSize();
+    
+        var boxSize = {width:92, height:92};
+
+        var boxSpace = 4;//方格间距
+
+         //屏幕宽度适配
+         var maxBoxNumbersWidth = portait*boxSize.width + boxSpace*(portait-1);
+         if(maxBoxNumbersWidth > screenSize.width)
+         {
+             this.customNode.scale = screenSize.width/maxBoxNumbersWidth;
+         }
 
         //let windowSize=cc.view.getVisibleSize();
 
         //var box = new cc.Sprite('number_slot_select.png');
         //var boxSize = box.SpriteFrame.getContentSize();
-        var boxSize = {width:92, height:92};
-
-        var boxSpace = 4;//方格间距
+        
         
         var beginPosX = (-(portait-1)*(boxSize.width+boxSpace)/2);
         var beginPosY = ((cross-1)*(boxSize.height+boxSpace)/2);
 
         var x = beginPosX;
-        var y = Math.max(screenSize.height/4, beginPosY);
+        
+        var y = screenSize.height/5 + beginPosY;
+        
+        y= Math.min(y, screenSize.height/2 - 200);
         for (var i=0; i<this.boxCSInfo.length; i++)
         {
             for(var j=0; j<this.boxCSInfo[i].length; j++)
@@ -305,12 +321,12 @@ cc.Class({
         for(var i=0; i<this.numbersInfo.length; i++)
             portait = Math.max(portait, this.numbersInfo[i].length);
 
+        var boxSize = {width:92, height:92};
+        var boxSpace = 8;//方格间距
+
         //根据方块数量和屏幕尺寸布局方格
         var screenSize = this.CanvasNode.getContentSize();
-
-        var boxSize = {width:92, height:92};
-        
-        var boxSpace = 8;//方格间距
+        console.log('screenSize', screenSize.width, screenSize.height);
 
         var beginPosX = (-(portait-1)*(boxSize.width+boxSpace)/2);
         var beginPosY = ((cross-1)*(boxSize.height+boxSpace)/2);
@@ -326,7 +342,8 @@ cc.Class({
                 var self = this;
                 var tmpNumberInfo = this.numbersInfo[i][j];
                 var slotData={valid:true, color:'s', number:-1};
-                this.newNumberSlotUI( slotData, x, y, i, j, tmpNumberInfo);
+                if(tmpNumberInfo.valid)
+                    this.newNumberSlotUI( slotData, x, y, i, j, tmpNumberInfo);
                 
                 x = x + (boxSize.width+boxSpace);
             }
@@ -387,8 +404,6 @@ cc.Class({
                     var itemData = gameData[i].split(",");
                     self.boxCSInfo[i] = new Array(itemData.length);
 
-                    var p = (itemData.length > 0);
-                     
                     for(var j = 0;j<itemData.length;j++)
                     {
                         self.boxCSInfo[i][j] = self.newBoxSlotInfo(itemData[j]);
@@ -475,6 +490,8 @@ cc.Class({
         }
         return true;
     },
+
+    checkBoxValidCallback: function(){},
 
     //检查数字方格合法性，更新颜色，检查通关
     checkBoxValid: function(srcSlot){
@@ -658,10 +675,10 @@ cc.Class({
             }
         }
 
-
+        
         if(false == beok)
             return;
-
+            console.log('A')
         
         for(var i=0; i<this.boxCSInfo.length; i++)
         {
@@ -673,7 +690,13 @@ cc.Class({
                         continue;
 
                     if(!this.boxCSInfo[i][j].slot.isValidNumber())
+                    {
+                        console.log('return a', i,j);
+                        this.print_boxCSInfo()
                         return;
+                        
+                    }
+                        
                 }
             }
         }
@@ -689,62 +712,67 @@ cc.Class({
             {
                 for(var j=0; j<this.boxCSInfo[logic].length; j++)
                 {
-                    if (this.boxCSInfo[logic][j].logic)continue;
-
-                    var color = this.boxCSInfo[logic][j].slot.getSlotColor();
-                    if (color == ruleColor || color == 'e' || ruleColor == 'e')
+                    if (this.boxCSInfo[logic][j].logic || !this.boxCSInfo[logic][j].valid)continue;
+                    
+                    var numberBox = this.boxCSInfo[logic][j].slot.getNumberBox();
+                    if (ruleColor == 'e')
                     {
-                        var number = this.boxCSInfo[logic][j].slot.getSlotNumber();
-                        if(!number)
+                        if(numberBox)
                         {
-                            var numberBox = this.boxCSInfo[logic][j].slot.getNumberBox();
-                            if(numberBox)
-                            {
-                                ruleNumber = ruleNumber + numberBox.getNumber();
-                            }
+                            ruleNumber = ruleNumber + numberBox.getNumber();
                         }
                         else
                         {
-                            ruleNumber = ruleNumber + number;
+                            ruleNumber = ruleNumber + this.boxCSInfo[logic][j].slot.getSlotNumber();
                         }
+                        console.log('T1ruleNumberA', ruleNumber, logic, j)
+                    }
+                    else if (numberBox && numberBox.getColor() == ruleColor)
+                    {
+                        ruleNumber = ruleNumber + numberBox.getNumber();
+                        console.log('T2ruleNumberB', ruleNumber, logic, j)
                     }
                 }
             }
             else
             {
+                console.log('protriat', logic, ruleColor)
                 for(var j=0; j<30; j++)
                 {
                     if (!this.boxCSInfo[j]) break;
-                    if(this.boxCSInfo[j][logic].valid && !this.boxCSInfo[j][logic].logic)
+                    if (this.boxCSInfo[j][logic].logic || !this.boxCSInfo[j][logic].valid)continue;
+
+                    var numberBox = this.boxCSInfo[j][logic].slot.getNumberBox();
+                    if(ruleColor == 'e')
                     {
-                        var color = this.boxCSInfo[j][logic].slot.getSlotColor();
-                        if (color == ruleColor || color == 'e' || ruleColor == 'e')
+                        if(numberBox)
                         {
-                            var number = this.boxCSInfo[j][logic].slot.getSlotNumber();
-                            if(!number)
-                            {
-                                var numberBox = this.boxCSInfo[j][logic].slot.getNumberBox();
-                                if(numberBox)
-                                {
-                                    ruleNumber = ruleNumber + numberBox.getNumber();
-                                }
-                            }
-                            else
-                            {
-                                ruleNumber = ruleNumber + number;
-                            }
+                            ruleNumber = ruleNumber + numberBox.getNumber();
                         }
+                        else
+                        {
+                            ruleNumber = ruleNumber + this.boxCSInfo[j][logic].slot.getSlotNumber();;
+                        }
+                        console.log('ruleNumberA', ruleNumber, j, logic)
+                    }
+                    else if (numberBox && numberBox.getColor() == ruleColor)
+                    {
+                        ruleNumber = ruleNumber + numberBox.getNumber();
+                        console.log('ruleNumberB', ruleNumber, j, logic)
                     }
                 }
             }
 
             if(ruleNumber != this.passRules[i].number)
-                return;
+            {
+                console.log('return b', ruleNumber, this.passRules[i].number, i);
+                                return;
+            }
         }
         
         console.log("win!!!");
-        this.node.dispatchEvent( new cc.Event.EventCustom('winEvent', true) );
-
+        this.winGame();
+        
 /*
         //遍历全局
         for(var i=0; i<this.csBoxCount.x; i++)
@@ -790,6 +818,9 @@ cc.Class({
     //移动数字到方格，更新boxCSInfo
     moveNumberToBox: function(srcSlot, destSlot, numberBox)
     {
+        if(srcSlot == destSlot || null == destSlot)
+            return;
+
         var site = srcSlot.getSlotSite();
         var srcSlotColor = srcSlot.getSlotColor();
         var destSlotColor = destSlot.getSlotColor();
@@ -888,5 +919,39 @@ cc.Class({
             this.customNode.destroy();
             this.customNode = null;
         }
+    },
+
+    winGame:function() {
+        var hallLogic = this.node.getComponent('hallLogic');
+        var id = hallLogic.getPlayCustomID();
+        if(id == this.endCustomID)
+        {
+            function playBoxSlotEffect(slot, delayTime){
+                var efftime = 0.7;
+                slot.node.runAction(cc.sequence(cc.delayTime(delayTime), cc.spawn(cc.fadeOut(efftime), cc.scaleBy(efftime, 1.5))));
+                var numberBox = slot.getNumberBox();
+                if(numberBox)
+                    numberBox.node.runAction(cc.sequence(cc.delayTime(delayTime), cc.spawn(cc.fadeOut(efftime), cc.scaleBy(efftime, 1.5))));
+            };
+
+            var delayt = 0.34;
+            var offsett = 0.30;
+            playBoxSlotEffect(this.boxCSInfo[0][0].slot, offsett+delayt*0);
+            playBoxSlotEffect(this.boxCSInfo[0][1].slot, offsett+delayt*1);
+            playBoxSlotEffect(this.boxCSInfo[0][2].slot, offsett+delayt*2);
+            playBoxSlotEffect(this.boxCSInfo[1][2].slot, offsett+delayt*3);
+            playBoxSlotEffect(this.boxCSInfo[1][1].slot, offsett+delayt*4);
+            playBoxSlotEffect(this.boxCSInfo[1][0].slot, offsett+delayt*5);
+            playBoxSlotEffect(this.boxCSInfo[2][0].slot, offsett+delayt*6);
+            playBoxSlotEffect(this.boxCSInfo[2][1].slot, offsett+delayt*7);
+            playBoxSlotEffect(this.boxCSInfo[2][2].slot, offsett+delayt*8);
+            
+            this.node.dispatchEvent( new cc.Event.EventCustom('winEndEvent', true) );
+        }
+        else
+        {
+            this.node.dispatchEvent( new cc.Event.EventCustom('winEvent', true) );
+        }
+        
     },
 });
