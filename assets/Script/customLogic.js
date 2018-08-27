@@ -470,7 +470,7 @@ cc.Class({
         var number = this.boxCSInfo[sitex][sitey].number;
         for (var i=0; i<this.csBoxCount.y; i++)
         {
-            if(number == this.boxCSInfo[sitex][i].number && sitey != i)
+            if(number == this.boxCSInfo[sitex][i].number && !this.boxCSInfo[sitex][i].logic && sitey != i)
             {
                 return false;
             }
@@ -483,8 +483,9 @@ cc.Class({
         var number = this.boxCSInfo[sitex][sitey].number;
         for (var i=0; i<this.csBoxCount.x; i++)
         {
-            if(number == this.boxCSInfo[i][sitey].number && sitex != i)
+            if(number == this.boxCSInfo[i][sitey].number && !this.boxCSInfo[i][sitey].logic && sitex != i)
             {
+                console.log('checkE', number, this.boxCSInfo[i][sitey].number, i, sitex, sitey);
                 return false;
             }
         }
@@ -621,6 +622,7 @@ cc.Class({
                 tt[this.boxCSInfo[slotSite.x][i].number] = tt[this.boxCSInfo[slotSite.x][i].number] + 1;
             }
         }
+        
         for (var i=0; i<this.csBoxCount.y; i++)
         {
             if(null != this.boxCSInfo[slotSite.x][i].number && 
@@ -635,9 +637,10 @@ cc.Class({
                 {
                     if(!this.boxCSInfo[slotSite.x][i].slot.isValidNumber())
                     {
+                        
                         var ret = this.checkBoxValidByPortait(slotSite.x, i);
                         this.boxCSInfo[slotSite.x][i].slot.setValidNumber(ret);
-                        if(!ret)beok = false;
+                        if(!ret){beok = false;}
                     }
                 }
             }
@@ -669,7 +672,7 @@ cc.Class({
                     {
                         var ret = this.checkBoxValidByCross(i, slotSite.y);
                         this.boxCSInfo[i][slotSite.y].slot.setValidNumber(ret);
-                        if(!ret)beok = false;
+                        if(!ret){beok = false;}
                     }
                 }
             }
@@ -678,7 +681,6 @@ cc.Class({
         
         if(false == beok)
             return;
-            console.log('A')
         
         for(var i=0; i<this.boxCSInfo.length; i++)
         {
@@ -691,10 +693,7 @@ cc.Class({
 
                     if(!this.boxCSInfo[i][j].slot.isValidNumber())
                     {
-                        console.log('return a', i,j);
-                        this.print_boxCSInfo()
                         return;
-                        
                     }
                         
                 }
@@ -725,18 +724,15 @@ cc.Class({
                         {
                             ruleNumber = ruleNumber + this.boxCSInfo[logic][j].slot.getSlotNumber();
                         }
-                        console.log('T1ruleNumberA', ruleNumber, logic, j)
                     }
                     else if (numberBox && numberBox.getColor() == ruleColor)
                     {
                         ruleNumber = ruleNumber + numberBox.getNumber();
-                        console.log('T2ruleNumberB', ruleNumber, logic, j)
                     }
                 }
             }
             else
             {
-                console.log('protriat', logic, ruleColor)
                 for(var j=0; j<30; j++)
                 {
                     if (!this.boxCSInfo[j]) break;
@@ -753,20 +749,17 @@ cc.Class({
                         {
                             ruleNumber = ruleNumber + this.boxCSInfo[j][logic].slot.getSlotNumber();;
                         }
-                        console.log('ruleNumberA', ruleNumber, j, logic)
                     }
                     else if (numberBox && numberBox.getColor() == ruleColor)
                     {
                         ruleNumber = ruleNumber + numberBox.getNumber();
-                        console.log('ruleNumberB', ruleNumber, j, logic)
                     }
                 }
             }
 
             if(ruleNumber != this.passRules[i].number)
             {
-                console.log('return b', ruleNumber, this.passRules[i].number, i);
-                                return;
+                return;
             }
         }
         
@@ -945,7 +938,7 @@ cc.Class({
             playBoxSlotEffect(this.boxCSInfo[2][0].slot, offsett+delayt*6);
             playBoxSlotEffect(this.boxCSInfo[2][1].slot, offsett+delayt*7);
             playBoxSlotEffect(this.boxCSInfo[2][2].slot, offsett+delayt*8);
-            
+
             this.node.dispatchEvent( new cc.Event.EventCustom('winEndEvent', true) );
         }
         else

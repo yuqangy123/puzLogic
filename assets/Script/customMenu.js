@@ -100,11 +100,13 @@ cc.Class({
         this.winIndex = false;
 
         var rand = Math.floor(Math.random()*10);
+        //rand = 8;
+        console.log('update background color rand', rand);
         switch(rand)
         {
             case 0:case 1:case 2:this.bgColorLayout.node.setColor(new cc.Color(112, 175, 185));break;
             case 3:case 4:case 5:this.bgColorLayout.node.setColor(new cc.Color(112, 185, 156));break;
-            case 6:case 7:case 8:this.bgColorLayout.node.setColor(new cc.Color(185, 138, 112));break;
+            case 6:case 7:case 8:this.bgColorLayout.node.setColor(new cc.Color(223, 165, 134));break;
             case 9:case 10:this.bgColorLayout.node.setColor(new cc.Color(149, 209, 207));break;
         }
         

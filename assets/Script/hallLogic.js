@@ -582,7 +582,7 @@ cc.Class({
 
     musicSystem: function(){
         this.sfx_index = this.random(1, 3);
-        this.playBGMusic1();
+        //this.playBGMusic1();
         this.playBird1();
     },
     playBGMusic1:function(){
