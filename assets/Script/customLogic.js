@@ -10,9 +10,26 @@ cc.Class({
     // use this for initialization
     onLoad: function () {
         this.endCustomID = 20;
+
+        this.playerMaxCustomID = cc.sys.localStorage.getItem("playerMaxCustomID");
+        if(null == this.playerMaxCustomID || '' == this.playerMaxCustomID){
+            this.playerMaxCustomID = 0;
+            cc.sys.localStorage.setItem("playerMaxCustomID", this.playerMaxCustomID);
+        }
+        else{
+            this.playerMaxCustomID = parseInt(this.playerMaxCustomID);
+        }
+
+        if(null == this.playerMaxCustomID){
+            this.playerMaxCustomID = 0;
+            cc.sys.localStorage.setItem("playerMaxCustomID", this.playerMaxCustomID);
+        }
+        console.log('this.playerMaxCustomID', this.playerMaxCustomID);
+        //cc.sys.localStorage.setItem("playerMaxCustomID", 0); this.playerMaxCustomID = 20;//test code
     },
 
     start () {
+        
     },
     
     // called every frame
@@ -49,11 +66,15 @@ cc.Class({
         var label = tipsLabel.getComponent(cc.Label)
         label.string = "";
 
-        if(cid == 1)
+        switch(cid)
         {
-            label.string = "将蓝色方块拖到上面的空闲空间。\r\n任何行或列都不应该有相同的数字两次。\r\n当出现错误时，数字会变成红色。"
-            //label.string = "一行或列的总和由一个小箭头和方块外的数字表示。";
+            case 1:{label.string = "将蓝色方块拖到上面的空闲空间。\r\n任何行或列都不应该有相同的数字两次。\r\n当出现错误时，数字会变成红色。"}break;
+            case 9:{label.string = "一行或一列的总和由一个小箭头和箭头外的数字表示。";}break;
+            case 11:{label.string = "不知道从哪里开始?\r\n找出哪一行或哪一列只有一个可能的解。";}break;
+            case 14:{label.string = "在一行或一列中蓝色方块的总和由蓝色箭头和箭头外的蓝色数字表示。";}break;
+            case 16:{label.string = "在一行或一列中白色方块的总和由白色箭头和箭头外的白色数字表示。";}break;
         }
+        
     },
     
     addSlotToMoveNotifyPool: function(boxSlot)
@@ -945,6 +966,12 @@ cc.Class({
         {
             this.node.dispatchEvent( new cc.Event.EventCustom('winEvent', true) );
         }
-        
+
+        this.playerMaxCustomID = parseInt(id);
+        cc.sys.localStorage.setItem("playerMaxCustomID", this.playerMaxCustomID);
+    },
+
+    getPlayerMaxCustomID: function(){
+        return this.playerMaxCustomID;
     },
 });

@@ -64,6 +64,8 @@ cc.Class({
         this.leafFall();
 
         this.musicSystem();
+
+        this.customLogic = this.node.getComponent('customLogic');
     },
     
     // called every frame
@@ -197,7 +199,7 @@ cc.Class({
         return null;
     },
 
-    newNumberUI:function(numberInfo, numberSlot)
+    newNumberUI:function(numberInfo, numberSlot, passCustom)
     {
         if (!numberInfo.valid)
             return;
@@ -229,10 +231,11 @@ cc.Class({
             newMyPrefab.x = numberSlot.node.x;
             newMyPrefab.y = numberSlot.node.y;
 
+            var tmpBox = numberSlot.getNumberBox();
+            
             var gou = newMyPrefab.getChildByName('gou');
-            if(gou)
+            if(gou && passCustom)
             {
-                
                 gou.active = true;
             }
         };
@@ -251,8 +254,7 @@ cc.Class({
         var prefabPath = '';
         //Ps. 假設你是放在在resources下的prefabs資料夾中，你就得寫 'prefabs/MyPrefab'
         
-        //test code
-        var maxCus = 20;
+        var maxCus = 1 + this.customLogic.getPlayerMaxCustomID();
         if(boxCSInfo.color == 'e')prefabPath = 'boxPrefab';
         if(boxCSInfo.color == 'w')prefabPath = 'boxWhitePrefab';
         if(boxCSInfo.color == 'b')prefabPath = 'boxBluePrefab';
@@ -300,7 +302,7 @@ cc.Class({
             {
                 if(boxCSInfo.number <= maxCus)
                 {
-                    self.newNumberUI(numberInfo, numberSlotScript);
+                    self.newNumberUI(numberInfo, numberSlotScript, boxCSInfo.number <= self.customLogic.getPlayerMaxCustomID());
                     self.addSlotToMoveNotifyPool(numberSlotScript, numberInfo.number);
                 }
             }
@@ -439,14 +441,14 @@ cc.Class({
     },
 
     playGame: function(customID, param){
-        this.playCusomtID = customID;
+        this.playCustomID = customID;
         
         this.hallNode.active = false;
 
-        var customLogic = this.node.getComponent('customLogic');
-        customLogic.destoryCustomNode();
-        customLogic.resetCanvas();
-        customLogic.loadCustomsData(customID);
+        
+        this.customLogic.destoryCustomNode();
+        this.customLogic.resetCanvas();
+        this.customLogic.loadCustomsData(customID);
         var customMenu = this.node.getComponent('customMenu');
         customMenu.updateUI();
         
@@ -468,54 +470,44 @@ cc.Class({
 
     customComeBack: function()
     {
-        var customLogic = this.node.getComponent('customLogic');
-        
-
-        this.hallNode.active = true;
-
-        customLogic.destoryCustomNode();
+        this.customLogic.destoryCustomNode();
         //this.resetCanvas();
         //this.loadHallData();
 
         this.scheduleOnce(function() {
-            //找到当前关卡的方格，放在player位置，再返回原来的位置
-            var playerNumberBox = this.playerSlotData.slot.getNumberBox();
-            var playerNumber = playerNumberBox.getNumber();
-            console.log('playerNumber != this.playCusomtID', playerNumber , this.playCusomtID);
-            if(playerNumber != this.playCusomtID)
-            {
-                var emptyslot = this.findSlotWithNumber();
-                if(emptyslot)
-                {
-                    console.log('emptyslot', emptyslot.getSlotSite().x, emptyslot.getSlotSite().y);
-                    emptyslot.setNumberBox(playerNumberBox);
-                    this.playerSlotData.slot.setNumberBox(null);
-                    playerNumberBox.node.x = emptyslot.node.x;
-                    playerNumberBox.node.y = emptyslot.node.y;
-                }
-                
 
-                var slot = this.findSlotWithNumber(this.playCusomtID);
-                if(slot)
+            this.hallNode.active = true;
+
+            var mult = this.boxCSInfo[1].length;
+            for(var n=0; n<this.playCustomID-1; n++)
+            {
+                var i = Math.floor(Math.max(0, n/mult));
+                var j = n - i*mult;
+                var numberBox = this.boxCSInfo[i][j].slot.getNumberBox();
+                if(numberBox)
                 {
-                    console.log('slot', slot.getSlotSite().x, slot.getSlotSite().y);
-                    var numberBox = slot.getNumberBox();
-                    slot.setNumberBox(null);
-                    this.playerSlotData.slot.setNumberBox(numberBox);
-                    numberBox.node.x = this.playerSlotData.slot.node.x;
-                    numberBox.node.y = this.playerSlotData.slot.node.y;
+                    numberBox.node.getChildByName('gou').active = true;
+                    numberBox.setNumber(n+1)
+                }
+                else
+                {
+                    var numberInfo = {valid:true, color:'b', number:n+1};
+                    this.newNumberUI(numberInfo, this.boxCSInfo[i][j].slot, true);
+                    this.addSlotToMoveNotifyPool(this.boxCSInfo[i][j].slot, n+1);
                 }
             }
-            playerNumberBox = this.playerSlotData.slot.getNumberBox();
-            var emptyslot = this.findSlotWithNumber();
-            console.log('emptyslot2', emptyslot.getSlotSite().x, emptyslot.getSlotSite().y);
-            console.log('playerNumberBox', playerNumberBox.getNumber());
-            if(emptyslot)
-            {
-                var oldNumberSlot = playerNumberBox.numberSlot;
-                playerNumberBox.moveToNumberSlot(emptyslot);
-                this.moveNumberToBox(oldNumberSlot, emptyslot, playerNumberBox);
-            }
+
+            var playerNumberBox = this.playerSlotData.slot.getNumberBox();
+            this.playerSlotData.slot.setNumberBox(null);
+            playerNumberBox.setNumber(this.playCustomID);
+            playerNumberBox.node.getChildByName('gou').active = false;
+            
+
+            var n = this.playCustomID-1;
+            var i = Math.floor(Math.max(0, n/mult));
+            var j = n - i*mult;
+            playerNumberBox.moveToNumberSlot(this.boxCSInfo[i][j].slot);
+            this.moveNumberToBox(this.playerSlotData.slot, this.boxCSInfo[i][j].slot, playerNumberBox);
         }, 0.02);
         
 
@@ -537,6 +529,8 @@ cc.Class({
                 for(var j=0; j<this.boxCSInfo[i].length; j++)
                 {
                     var numberBox = this.boxCSInfo[i][j].slot.getNumberBox();
+                    console.log('findSlotWithNumber', i, j)
+                    console.log(numberBox, number, numberBox.getNumber())
                     if(numberBox && numberBox.getNumber() == number)
                     {
                         return this.boxCSInfo[i][j].slot;
@@ -551,6 +545,7 @@ cc.Class({
                 for(var j=0; j<this.boxCSInfo[i].length; j++)
                 {
                     var numberBox = this.boxCSInfo[i][j].slot.getNumberBox();
+                    console.log('2findSlotWithNumber', i, j)
                     if(!numberBox)
                     {
                         return this.boxCSInfo[i][j].slot;
@@ -560,8 +555,37 @@ cc.Class({
         }
     },
 
+    winGame: function(){
+        var playerNumberBox = this.playerSlotData.slot.getNumberBox();
+        playerNumberBox.node.getChildByName('gou').active = true;
+
+
+        var cid = this.getPlayCustomID();
+        var mult = this.boxCSInfo[1].length;
+        var i = Math.floor(Math.max(0, cid/mult));
+        var j = cid - i*mult - 1;
+        console.log('i,j', i, j, cid, mult);
+        var numberBox = this.boxCSInfo[i][j].slot.getNumberBox();
+        if(numberBox)
+        {
+            numberBox.node.getChildByName('gou').active = true;
+        }
+        
+
+        cid = cid + 1;
+        i = Math.floor(Math.max(0, cid/mult));
+        j = cid - i*mult - 1;
+        console.log('2i,j', i, j, cid, mult);
+        if(this.boxCSInfo[i] && this.boxCSInfo[i][j])
+        {
+            var numberInfo = {valid:true, color:'b', number:cid};
+            this.newNumberUI(numberInfo, this.boxCSInfo[i][j].slot, false);
+            this.addSlotToMoveNotifyPool(this.boxCSInfo[i][j].slot, cid);
+        }
+    },
+
     getPlayCustomID: function(){
-        return this.playCusomtID;
+        return this.playCustomID;
     },
 
     playSfxSound: function(){
@@ -582,7 +606,7 @@ cc.Class({
 
     musicSystem: function(){
         this.sfx_index = this.random(1, 3);
-        //this.playBGMusic1();
+        this.playBGMusic1();//test code
         this.playBird1();
     },
     playBGMusic1:function(){

@@ -104,9 +104,13 @@ cc.Class({
         console.log('update background color rand', rand);
         switch(rand)
         {
-            case 0:case 1:case 2:this.bgColorLayout.node.setColor(new cc.Color(112, 175, 185));break;
-            case 3:case 4:case 5:this.bgColorLayout.node.setColor(new cc.Color(112, 185, 156));break;
-            case 6:case 7:case 8:this.bgColorLayout.node.setColor(new cc.Color(223, 165, 134));break;
+            case 0:case 1:this.bgColorLayout.node.setColor(new cc.Color(112, 175, 185));break;
+            case 2:this.bgColorLayout.node.setColor(new cc.Color(216, 164, 164));break;
+            case 3:this.bgColorLayout.node.setColor(new cc.Color(213, 157, 255));break;
+            case 4:case 5:this.bgColorLayout.node.setColor(new cc.Color(196, 162, 130));break;
+            case 6:this.bgColorLayout.node.setColor(new cc.Color(189, 143, 134));break;
+            case 7:this.bgColorLayout.node.setColor(new cc.Color(151, 170, 158));break;
+            case 8:this.bgColorLayout.node.setColor(new cc.Color(111, 175, 184));break;
             case 9:case 10:this.bgColorLayout.node.setColor(new cc.Color(149, 209, 207));break;
         }
         
@@ -135,7 +139,6 @@ cc.Class({
         this.exitTips.string = '确定重新开始吗？\r\n当前关卡将会重置。';
 
         this.Sfx_menu02.play();
-        console.log('restartClick');
     },
 
     exitYesClick: function(){
@@ -155,7 +158,6 @@ cc.Class({
         }
 
         this.Sfx_menu01.play();
-        console.log('exitYesClick');
     },
 
     exitNoClick: function(){
@@ -163,7 +165,6 @@ cc.Class({
         this.exitTips.node.active = false;
 
         this.Sfx_menu03.play();
-        console.log('exitNoClick');
     },
     
 
@@ -181,7 +182,6 @@ cc.Class({
         this.exitTips.string = '确定返回吗？\r\n当前关卡将会重置。';
 
         this.Sfx_menu02.play();
-        console.log('quitClick');
     },
 
     showWinLayOut:function(b){
@@ -205,7 +205,6 @@ cc.Class({
         this.showWinLayOut(false);
 
         this.Sfx_menu01.play();
-        console.log('winToNextClick');
     },
 
     winToBackClick: function(){
@@ -216,7 +215,6 @@ cc.Class({
         this.showWinLayOut(false);
 
         this.Sfx_menu02.play();
-        console.log('winToBackClick');
     },
 
     setLevel: function(lv){
@@ -255,7 +253,7 @@ cc.Class({
         var t = 1.23;
         this.winDescLabel.node.opacity = 0;
         this.winDescLabel.node.runAction(cc.fadeIn(t).easing(cc.easeCubicActionOut()));
-        this.winDescLabel.string = "您已全部通关！\n后续作品敬请期待。"
+        this.winDescLabel.string = "您已全部通关！\n感谢试玩。\n后续作品敬请期待。"
 
         this.winToBackBtn.node.opacity = 0;
         this.winToBackBtn.node.runAction(cc.fadeIn(t).easing(cc.easeCubicActionOut()));

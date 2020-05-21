@@ -218,7 +218,7 @@ cc.Class({
 		if (success)
 		{
 			if(this.color == 'w')
-				this.number_label.node.setColor(new cc.Color(81, 81, 255));
+				this.number_label.node.setColor(new cc.Color(0, 0, 0));
 			else
 				this.number_label.node.setColor(new cc.Color(255, 255, 255));
 		}
