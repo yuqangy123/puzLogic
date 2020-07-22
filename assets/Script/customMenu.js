@@ -95,7 +95,7 @@ cc.Class({
 
     updateUI () {
         var hallLogic = this.node.getComponent('hallLogic');
-        var id = hallLogic.getPlayCustomID();
+        var id = hallLogic.getCustomID();
         this.setLevel(id);
         this.winIndex = false;
 
@@ -104,14 +104,14 @@ cc.Class({
         console.log('update background color rand', rand);
         switch(rand)
         {
-            case 0:case 1:this.bgColorLayout.node.setColor(new cc.Color(112, 175, 185));break;
-            case 2:this.bgColorLayout.node.setColor(new cc.Color(216, 164, 164));break;
-            case 3:this.bgColorLayout.node.setColor(new cc.Color(213, 157, 255));break;
-            case 4:case 5:this.bgColorLayout.node.setColor(new cc.Color(196, 162, 130));break;
-            case 6:this.bgColorLayout.node.setColor(new cc.Color(189, 143, 134));break;
-            case 7:this.bgColorLayout.node.setColor(new cc.Color(151, 170, 158));break;
-            case 8:this.bgColorLayout.node.setColor(new cc.Color(111, 175, 184));break;
-            case 9:case 10:this.bgColorLayout.node.setColor(new cc.Color(149, 209, 207));break;
+            case 0:case 1:this.bgColorLayout.node.color=cc.Color(112, 175, 185);break;
+            case 2:this.bgColorLayout.node.color=cc.Color(216, 164, 164);break;
+            case 3:this.bgColorLayout.node.color=cc.Color(213, 157, 255);break;
+            case 4:case 5:this.bgColorLayout.node.color=cc.Color(196, 162, 130);break;
+            case 6:this.bgColorLayout.node.color=cc.Color(189, 143, 134);break;
+            case 7:this.bgColorLayout.node.color=cc.Color(151, 170, 158);break;
+            case 8:this.bgColorLayout.node.color=cc.Color(111, 175, 184);break;
+            case 9:case 10:this.bgColorLayout.node.color=cc.Color(149, 209, 207);break;
         }
         
         this.setMenuVisible(true);
@@ -169,12 +169,12 @@ cc.Class({
     
 
     quitClick: function(){
-        this.menuLayout.node.setLocalZOrder(999);
+        this.menuLayout.node.zIndex=999;
         if(this.menuLayout)
         {
             this.menuLayout.node.active = true;
 
-            this.exitTips.node.setLocalZOrder(999);
+            this.exitTips.node.zIndex=999;
             this.scheduleOnce(function() {this.exitTips.node.active = true;}, 0.15);
         }
         this.clickType = 2;
@@ -190,17 +190,17 @@ cc.Class({
         this.winToNextBtn.node.active = b;
         this.winToBackBtn.node.active = b;
 
-        this.menuLayout.node.setLocalZOrder(2);
-        this.exitTips.node.setLocalZOrder(3);
-        this.winDescLabel.node.setLocalZOrder(4);
-        this.winToNextBtn.node.setLocalZOrder(4);
-        this.winToBackBtn.node.setLocalZOrder(4);
+        this.menuLayout.node.zIndex=2;
+        this.exitTips.node.zIndex=3;
+        this.winDescLabel.node.zIndex=4;
+        this.winToNextBtn.node.zIndex=4;
+        this.winToBackBtn.node.zIndex=4;
     },
 
     winToNextClick: function(){
         
         var hallLogic = this.node.getComponent('hallLogic');
-        hallLogic.playGame(hallLogic.getPlayCustomID()+1, "due" );
+        hallLogic.playGame(hallLogic.getCustomID()+1, "due" );
         
         this.showWinLayOut(false);
 

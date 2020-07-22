@@ -35,7 +35,7 @@ cc.Class({
 
     start () {
         cc.game.addPersistRootNode(this.node);
-        cc.director.setDisplayStats(false);
+        //cc.director.setDisplayStats(false);
     },
 
     // update (dt) {},

@@ -116,7 +116,7 @@ cc.Class({
 			this.setNumberSlot(numberSlot);
 		}
 		
-		var moveDis = cc.pDistance(cc.v2(actNumberSlot.node.x, actNumberSlot.node.y), cc.v2(this.node.x, this.node.y));
+		var moveDis = cc.v2(cc.v2(actNumberSlot.node.x, actNumberSlot.node.y), cc.v2(this.node.x, this.node.y));
 		if (moveDis <= this.moveRestoreDis)
 		{
 			this.restorePosition();
@@ -134,13 +134,13 @@ cc.Class({
 			if (time < this.moveMinTime) time = this.moveMinTime;
 			if (time > this.moveMaxTime) time = this.moveMaxTime;
 			
-			var action = cc.moveBy(time, cc.p(actNumberSlot.node.x - this.node.x - x, actNumberSlot.node.y - this.node.y - y)).easing(cc.easeCubicActionOut());
+			var action = cc.moveBy(time, cc.v2(actNumberSlot.node.x - this.node.x - x, actNumberSlot.node.y - this.node.y - y)).easing(cc.easeCubicActionOut());
 			this.node.runAction(cc.sequence(action, callback, checkNumberValidCallback));
 		}
 	},
 	
 	notifyMoveToLogic: function (type, movePos) {
-		return this.csLogic.notifyNumberMove(type, this.node.convertToWorldSpaceAR(cc.p(0, 0)), this);
+		return this.csLogic.notifyNumberMove(type, this.node.convertToWorldSpaceAR(cc.v2(0, 0)), this);
 	},
 	
 	setInputControl: function () {
@@ -153,8 +153,8 @@ cc.Class({
 									this.node.position.y + localPoint.y - this.contentSize.height/2);
 			this.notifyMoveToLogic(cc.Node.EventType.TOUCH_START, cc.v2(0, 0));
 
-			this.lastLocalZOrder = this.node.getLocalZOrder();
-			this.node.setLocalZOrder(999);
+			this.lastLocalZOrder = this.node.zIndex;
+			this.node.zIndex=999;
 		}, this);
 		this.node.on(cc.Node.EventType.TOUCH_MOVE, function (event) {
             var delta = event.touch.getDelta();
@@ -170,7 +170,7 @@ cc.Class({
 			this.csLogic.moveNumberToBox(oldNumberSlot, numberSlot, this);
 			
 
-			this.node.setLocalZOrder(this.lastLocalZOrder);	
+			this.node.zIndex=this.lastLocalZOrder;
 			
 		}, this);
 		
@@ -218,12 +218,12 @@ cc.Class({
 		if (success)
 		{
 			if(this.color == 'w')
-				this.number_label.node.setColor(new cc.Color(0, 0, 0));
+				this.number_label.node.color=cc.Color(0, 0, 0);
 			else
-				this.number_label.node.setColor(new cc.Color(255, 255, 255));
+				this.number_label.node.color=cc.Color(255, 255, 255);
 		}
 		else
-			this.number_label.node.setColor(new cc.Color(255, 0, 0));
+			this.number_label.node.color=cc.Color(255, 0, 0);
 
 			
 	},

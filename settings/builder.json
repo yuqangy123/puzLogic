@@ -27,7 +27,7 @@
   },
   "renderMode": "0",
   "startScene": "a3155b70-bfad-436d-821f-642f3371f9f7",
-  "title": "hello_world",
+  "title": "puzLogic",
   "webOrientation": "auto",
   "wechatgame": {
     "REMOTE_SERVER_ROOT": "http://47.91.176.170",
@@ -37,5 +37,37 @@
     "subContext": ""
   },
   "xxteaKey": "43e9aea5-5cc6-47",
-  "zipCompressJs": true
+  "zipCompressJs": true,
+  "mainCompressionType": "default",
+  "mainIsRemote": false,
+  "nativeMd5Cache": true,
+  "android": {
+    "REMOTE_SERVER_ROOT": "",
+    "packageName": "org.cocos2d.demo"
+  },
+  "ios": {
+    "REMOTE_SERVER_ROOT": "",
+    "packageName": "org.cocos2d.demo"
+  },
+  "mac": {
+    "REMOTE_SERVER_ROOT": "",
+    "height": 720,
+    "packageName": "org.cocos2d.demo",
+    "width": 1280
+  },
+  "win32": {
+    "REMOTE_SERVER_ROOT": "",
+    "height": 720,
+    "width": 1280
+  },
+  "android-instant": {
+    "REMOTE_SERVER_ROOT": "",
+    "host": "",
+    "packageName": "org.cocos2d.demo",
+    "pathPattern": "",
+    "recordPath": "",
+    "scheme": "https",
+    "skipRecord": false
+  },
+  "appBundle": false
 }

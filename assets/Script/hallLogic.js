@@ -103,7 +103,7 @@ cc.Class({
 
         
         var moveDis = Math.sqrt(offsetx*offsetx + offsety*offsety);
-        var action = cc.moveBy(moveDis/70, cc.p(offsetx, -offsety));
+        var action = cc.moveBy(moveDis/70, cc.v2(offsetx, -offsety));
         
         var self = this;
         var compileCallback = function()
@@ -163,7 +163,7 @@ cc.Class({
         this.CanvasNode = cc.find( 'Canvas' );
         this.hallNode = cc.find('Canvas/hallNode');
         this.dueLayout = cc.find('Canvas/dueLayout');
-        this.dueLayout.setLocalZOrder(2);
+        this.dueLayout.zIndex=2;
 
         this.boxCSInfo = new Array();
 
@@ -224,7 +224,7 @@ cc.Class({
             
             var numberScript = newMyPrefab.getComponent( 'numberBox' );
 
-            numberScript.setColor(numberInfo.color);
+            numberScript.color=numberInfo.color;
             numberScript.setNumber(numberInfo.number);
             numberScript.setLogic(self);
             numberSlot.setNumberBox(numberScript);
@@ -374,7 +374,7 @@ cc.Class({
         
         info.valid = true;
 
-        var gameData = strData.split("_");
+        var gameData = strData.toString().split("_");
 
         //为何数字，-1代表需要无数字
         info.number = -1;
@@ -387,7 +387,7 @@ cc.Class({
 
         //算法，rtlb+color+number
         if (gameData[2] && gameData[2].length > 0)
-            info.logic = strData.split(gameData[2]);
+            info.logic = strData.toString().split(gameData[2]);
 
         return info;
     },
@@ -402,7 +402,7 @@ cc.Class({
                 console.log('initNumberData file ', err);
                 return
             }else {
-                var gameData = data.split("\n");
+                var gameData = data.toString().split("\n");
                 for(var i = 0;i<gameData.length;i++){
                     var itemData = gameData[i].split(",");
                     self.numbersInfo[i] = new Array(itemData.length);
@@ -513,7 +513,7 @@ cc.Class({
 
 
         var bgColorLayout = this.CanvasNode.getChildByName('bgColorLayout');
-        bgColorLayout.setColor(new cc.Color(112, 161, 130));
+        bgColorLayout.color=cc.Color(112, 161, 130);
 
         var tipsLabel = this.CanvasNode.getChildByName("tipsLabel")
         var label = tipsLabel.getComponent(cc.Label)
@@ -560,7 +560,7 @@ cc.Class({
         playerNumberBox.node.getChildByName('gou').active = true;
 
 
-        var cid = this.getPlayCustomID();
+        var cid = this.getCustomID();
         var mult = this.boxCSInfo[1].length;
         var i = Math.floor(Math.max(0, cid/mult));
         var j = cid - i*mult - 1;
@@ -584,7 +584,7 @@ cc.Class({
         }
     },
 
-    getPlayCustomID: function(){
+    getCustomID: function(){
         return this.playCustomID;
     },
 

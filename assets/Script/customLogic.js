@@ -119,7 +119,7 @@ cc.Class({
             
             var numberScript = newMyPrefab.getComponent( 'numberBox' );
 
-            numberScript.setColor(numberInfo.color);
+            numberScript.color = numberInfo.color;
             numberScript.setNumber(numberInfo.number);
             numberScript.setLogic(self);
             numberSlot.setNumberBox(numberScript);
@@ -284,8 +284,6 @@ cc.Class({
 
     
     parseBoxCSInfoUI: function(){
-        
-
         var cross = this.boxCSInfo.length;//横向
         var portait = 0;//纵向
 
@@ -390,7 +388,7 @@ cc.Class({
 
         info.valid = true;
 
-        var gameData = strData.split("_");
+        var gameData = strData.toString().split("_");
 
         //为何数字，-1代表需要无数字
         info.number = -1;
@@ -419,7 +417,7 @@ cc.Class({
                 return
             }else 
             {
-                var gameData = data.split("\n");
+                var gameData = data.toString().split("\n");
                 for(var i = 0;i<gameData.length;i++)
                 {
                     var itemData = gameData[i].split(",");
@@ -462,7 +460,7 @@ cc.Class({
                 console.log('initNumberData file ', dataFile, err);
                 return
             }else {
-                var gameData = data.split("\n");
+                var gameData = data.toString().split("\n");
                 for(var i = 0;i<gameData.length;i++){
                     var itemData = gameData[i].split(",");
                     self.numbersInfo[i] = new Array(itemData.length);
@@ -937,7 +935,8 @@ cc.Class({
 
     winGame:function() {
         var hallLogic = this.node.getComponent('hallLogic');
-        var id = hallLogic.getPlayCustomID();
+        var id = hallLogic.getCustomID();
+        console.log("id:", id);
         if(id == this.endCustomID)
         {
             function playBoxSlotEffect(slot, delayTime){
@@ -964,7 +963,14 @@ cc.Class({
         }
         else
         {
-            this.node.dispatchEvent( new cc.Event.EventCustom('winEvent', true) );
+            if(false)//3 == id
+            {
+                cc.director.emit('biaobaiEvent');
+            }
+            else
+            {
+                this.node.dispatchEvent( new cc.Event.EventCustom('winEvent', true) );
+            }
         }
 
         this.playerMaxCustomID = parseInt(id);

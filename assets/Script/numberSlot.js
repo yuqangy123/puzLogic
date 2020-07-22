@@ -56,7 +56,7 @@ cc.Class({
 		this.box_slot_select.opacity = 0;
 		this.box_slot_unselect.opacity = 255;
 		this.slotSize = this.box_slot_unselect.getContentSize();
-        this.slotPos = this.box_slot_unselect.convertToWorldSpaceAR(cc.p(0, 0));
+        this.slotPos = this.box_slot_unselect.convertToWorldSpaceAR(cc.v2(0, 0));
         
 		//this.node.getChildByName("Cannon 01");
     },
@@ -107,10 +107,10 @@ cc.Class({
 
         if(valid)
         {
-            this.number_label.node.setColor(new cc.Color(64, 64, 64));
+            this.number_label.node.color=cc.Color(64, 64, 64);
         }
         else
-            this.number_label.node.setColor(new cc.Color(255, 0, 0));
+            this.number_label.node.color=cc.Color(255, 0, 0);
 
     },
 

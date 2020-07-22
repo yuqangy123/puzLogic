@@ -1,12 +1,18 @@
 {
-  "ver": "1.0.0",
+  "ver": "2.3.4",
   "uuid": "416bea13-1154-47c6-bb8e-235aaf871345",
   "type": "sprite",
   "wrapMode": "clamp",
   "filterMode": "bilinear",
+  "premultiplyAlpha": false,
+  "genMipmaps": false,
+  "packable": true,
+  "width": 99,
+  "height": 32,
+  "platformSettings": {},
   "subMetas": {
     "xiayiguan1": {
-      "ver": "1.0.3",
+      "ver": "1.0.4",
       "uuid": "104d7a1a-5923-4615-98da-2401e904b6cf",
       "rawTextureUuid": "416bea13-1154-47c6-bb8e-235aaf871345",
       "trimType": "auto",
