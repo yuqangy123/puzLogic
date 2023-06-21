@@ -74,6 +74,7 @@ cc.Class({
         
         //监听win事件
         this.node.on('winEvent', function (event) {
+            console.log('winEvent');
             if(!this.winIndex)
             {
                 this.winIndex = true;

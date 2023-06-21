@@ -10,6 +10,7 @@ cc.Class({
     // use this for initialization
     onLoad: function () {
         this.endCustomID = 20;
+        window.isPlayedBrithdayAnim = false;
 
         this.playerMaxCustomID = cc.sys.localStorage.getItem("playerMaxCustomID");
         if(null == this.playerMaxCustomID || '' == this.playerMaxCustomID){
@@ -406,7 +407,7 @@ cc.Class({
     },
 
     //初始化关卡数据
-    initCustomData: function (dataFile) 
+    initCustomData: function (dataFile)
     {
         var self = this;
         cc.loader.loadRes(dataFile, function(err,data){
@@ -963,7 +964,7 @@ cc.Class({
         }
         else
         {
-            if(false)//3 == id
+            if(1 == id && !window.isPlayedBrithdayAnim)
             {
                 cc.director.emit('biaobaiEvent');
             }
